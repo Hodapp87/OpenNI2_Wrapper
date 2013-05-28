@@ -1,10 +1,17 @@
 cmake_minimum_required (VERSION 2.6)
-project (KinfuReplacementNeedsRenaming)
+# N.B. This needs to point at the root of the source and I'm not sure if this is
+# a good way to accomplish that.
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/" ${CMAKE_MODULE_PATH})
+message(${CMAKE_MODULE_PATH})
+
+project (Surfactant)
 add_executable(Viewer Viewer.cpp main.cpp)
+add_executable(OpenCL_example opencl_test.c)
 
 # helpful: cmake --help-module FindGLUT
 find_package(GLUT REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(OpenCL REQUIRED)
 
 find_path(OPENNI2_INCLUDE_DIR OpenNI.h
           HINTS /usr/include/OpenNI2 /usr/local/include/OpenNI2
@@ -16,9 +23,4 @@ find_library(OPENNI2_LIBRARY
 
 include_directories(SYSTEM ${OPENNI2_INCLUDE_DIR} ${GLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
 target_link_libraries(Viewer ${OPENNI2_LIBRARY} ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY})
-
-#	CFLAGS += -DUNIX -DGLX_GLXEXT_LEGACY
-#	USED_LIBS += glut GL
-#endif
-
-#USED_LIBS += OpenNI2
+target_link_libraries(OpenCL_example ${OPENCL_LIBRARY})
