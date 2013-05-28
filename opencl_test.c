@@ -17,55 +17,21 @@
  
 ////////////////////////////////////////////////////////////////////////////////
  
-// Simple compute kernel which computes the square of an input array 
-//
-const char *KernelSource = "\n" \
-"__kernel void square(                                                       \n" \
-"   __global float* input,                                              \n" \
-"   __global float* output,                                             \n" \
-"   const unsigned int count)                                           \n" \
-"{                                                                      \n" \
-"   int i = get_global_id(0);                                           \n" \
-"   if(i < count)                                                       \n" \
-"       output[i] = input[i] * input[i];                                \n" \
-"}                                                                      \n" \
-"\n";
- 
 ////////////////////////////////////////////////////////////////////////////////
 
-/* 
-void blah(const char * filename)
-{
-    FILE * fd = NULL
-    int programSize = 0;
-    char * program = NULL;
+// Return a string giving a short description of the given OpenCL error code.
+char * openClErrorString(cl_int err);
 
-    // Try to read file and get size of kernel source.
-    fd = fopen(filename, "r");
-    if (!fd) {
-        fprintf(stderr, strerror(errno));
-        return;
-    }
-    fseek(fd, 0, SEEK_END);
-    programSize = ftell(fd);
-    rewind(fd);
-
-    // Read kernel source into 'program'.
-    program = (char*) malloc(programSize + 1);
-    program[programSize] = '\0';
-    fread(program, sizeof(char), programSize, fd);
-    fclose(fd);
-
-    // create program from buffer
-    program = clCreateProgramWithSource(context, 1,
-                                        (const char**) &programBuffer, &programSize, NULL);
-    free(programBuffer);
-}
-*/
+// readOpenClSource: Create a cl_program from OpenCL source in a file.
+//    ctx: The OpenCL context
+//    filename: Input filename
+//    err: Return error code; if this is nonzero, some error occurred.
+// Returns cl_program from clCreateProgram if successful.
+cl_program readOpenClSource(cl_context ctx, const char * filename, int * err);
 
 int main(int argc, char** argv)
 {
-    int err;                            // error code returned from api calls
+    cl_int err;                         // error code returned from api calls
       
     float data[DATA_SIZE];              // original data set given to device
     float results[DATA_SIZE];           // results returned from device
@@ -94,24 +60,24 @@ int main(int argc, char** argv)
         data[i] = rand() / (float)RAND_MAX;
 
     // Figure out the platform.
-    if (clGetPlatformIDs(0, NULL, &platformCount) != CL_SUCCESS || platformCount < 1)
-    {
-        printf("Can't get any platforms!\n");
+    err = clGetPlatformIDs(0, NULL, &platformCount);
+    if (err != CL_SUCCESS) {
+        fprintf(stderr, "Error getting platform count: %s\n", openClErrorString(err));
         return EXIT_FAILURE;
     }
     printf("Found %d platforms!\n", platformCount);
 
     platforms = (cl_platform_id*) malloc(platformCount * sizeof(cl_platform_id));
-    if (clGetPlatformIDs(platformCount, platforms, NULL) != CL_SUCCESS)
-    {
-        printf("Can't get list of platforms!\n");
+    err = clGetPlatformIDs(platformCount, platforms, NULL);
+    if (err != CL_SUCCESS) {
+        fprintf(stderr, "Error getting platform list: %s\n", openClErrorString(err));
         free(platforms);
         return EXIT_FAILURE;
     }
 
     err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
-    if (err != CL_SUCCESS || deviceCount < 1) {
-        printf("Can't find any devices!\n");
+    if (err != CL_SUCCESS) {
+        fprintf(stderr, "Error getting device count: %s\n", openClErrorString(err));
         free(platforms);
         return EXIT_FAILURE;
     }
@@ -121,50 +87,32 @@ int main(int argc, char** argv)
     //
     err = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_ALL, 1, &device_id, NULL);
     free(platforms);
-    switch (err) {
-    case CL_INVALID_PLATFORM:
-        printf("Platform is invalid!\n");
+    if (err != CL_SUCCESS) {
+        fprintf(stderr, "Error finding device: %s\n", openClErrorString(err));
         return EXIT_FAILURE;
-        break;
-    case CL_INVALID_DEVICE_TYPE:
-        printf("Invalid device type!\n");
-        return EXIT_FAILURE;
-        break;
-    case CL_INVALID_VALUE:
-        printf("Invalid values given!\n");
-        return EXIT_FAILURE;
-        break;
-    case CL_DEVICE_NOT_FOUND:
-        printf("No matching OpenCL devices were found!\n");
-        break;
-    case CL_SUCCESS:
-        break;
-    default:
-        printf("Unknown error in clGetDeviceIDs!\n");
     }
   
     // Create a compute context 
     //
     context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
-    if (!context)
-    {
-        printf("Error: Failed to create a compute context!\n");
+    if (err != CL_SUCCESS) {
+        fprintf(stderr, "Error getting context: %s\n", openClErrorString(err));
         return EXIT_FAILURE;
     }
  
     // Create a command commands
     //
     commands = clCreateCommandQueue(context, device_id, 0, &err);
-    if (!commands)
-    {
-        printf("Error: Failed to create a command commands!\n");
+    if (err != CL_SUCCESS) {
+        fprintf(stderr, "Error getting command queue: %s\n", openClErrorString(err));
         return EXIT_FAILURE;
     }
  
     // Create the compute program from the source buffer
     //
-    program = clCreateProgramWithSource(context, 1, (const char **) & KernelSource, NULL, &err);
-    if (!program)
+    program = readOpenClSource(context, "opencl_kernel.cl", &err);
+    //program = clCreateProgramWithSource(context, 1, (const char **) & KernelSource, NULL, &err);
+    if (err != CL_SUCCESS)
     {
         printf("Error: Failed to create compute program!\n");
         return EXIT_FAILURE;
@@ -280,4 +228,88 @@ int main(int argc, char** argv)
     clReleaseContext(context);
  
     return 0;
+}
+
+
+char * openClErrorString(cl_int err)
+{
+    switch (err) {
+        case CL_SUCCESS:                            return "Success!";
+        case CL_DEVICE_NOT_FOUND:                   return "Device not found.";
+        case CL_DEVICE_NOT_AVAILABLE:               return "Device not available";
+        case CL_COMPILER_NOT_AVAILABLE:             return "Compiler not available";
+        case CL_MEM_OBJECT_ALLOCATION_FAILURE:      return "Memory object allocation failure";
+        case CL_OUT_OF_RESOURCES:                   return "Out of resources";
+        case CL_OUT_OF_HOST_MEMORY:                 return "Out of host memory";
+        case CL_PROFILING_INFO_NOT_AVAILABLE:       return "Profiling information not available";
+        case CL_MEM_COPY_OVERLAP:                   return "Memory copy overlap";
+        case CL_IMAGE_FORMAT_MISMATCH:              return "Image format mismatch";
+        case CL_IMAGE_FORMAT_NOT_SUPPORTED:         return "Image format not supported";
+        case CL_BUILD_PROGRAM_FAILURE:              return "Program build failure";
+        case CL_MAP_FAILURE:                        return "Map failure";
+        case CL_INVALID_VALUE:                      return "Invalid value";
+        case CL_INVALID_DEVICE_TYPE:                return "Invalid device type";
+        case CL_INVALID_PLATFORM:                   return "Invalid platform";
+        case CL_INVALID_DEVICE:                     return "Invalid device";
+        case CL_INVALID_CONTEXT:                    return "Invalid context";
+        case CL_INVALID_QUEUE_PROPERTIES:           return "Invalid queue properties";
+        case CL_INVALID_COMMAND_QUEUE:              return "Invalid command queue";
+        case CL_INVALID_HOST_PTR:                   return "Invalid host pointer";
+        case CL_INVALID_MEM_OBJECT:                 return "Invalid memory object";
+        case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:    return "Invalid image format descriptor";
+        case CL_INVALID_IMAGE_SIZE:                 return "Invalid image size";
+        case CL_INVALID_SAMPLER:                    return "Invalid sampler";
+        case CL_INVALID_BINARY:                     return "Invalid binary";
+        case CL_INVALID_BUILD_OPTIONS:              return "Invalid build options";
+        case CL_INVALID_PROGRAM:                    return "Invalid program";
+        case CL_INVALID_PROGRAM_EXECUTABLE:         return "Invalid program executable";
+        case CL_INVALID_KERNEL_NAME:                return "Invalid kernel name";
+        case CL_INVALID_KERNEL_DEFINITION:          return "Invalid kernel definition";
+        case CL_INVALID_KERNEL:                     return "Invalid kernel";
+        case CL_INVALID_ARG_INDEX:                  return "Invalid argument index";
+        case CL_INVALID_ARG_VALUE:                  return "Invalid argument value";
+        case CL_INVALID_ARG_SIZE:                   return "Invalid argument size";
+        case CL_INVALID_KERNEL_ARGS:                return "Invalid kernel arguments";
+        case CL_INVALID_WORK_DIMENSION:             return "Invalid work dimension";
+        case CL_INVALID_WORK_GROUP_SIZE:            return "Invalid work group size";
+        case CL_INVALID_WORK_ITEM_SIZE:             return "Invalid work item size";
+        case CL_INVALID_GLOBAL_OFFSET:              return "Invalid global offset";
+        case CL_INVALID_EVENT_WAIT_LIST:            return "Invalid event wait list";
+        case CL_INVALID_EVENT:                      return "Invalid event";
+        case CL_INVALID_OPERATION:                  return "Invalid operation";
+        case CL_INVALID_GL_OBJECT:                  return "Invalid OpenGL object";
+        case CL_INVALID_BUFFER_SIZE:                return "Invalid buffer size";
+        case CL_INVALID_MIP_LEVEL:                  return "Invalid mip-map level";
+        default: return "Unknown";
+    }
+}
+
+cl_program readOpenClSource(cl_context ctx, const char * filename, int * err)
+{
+    FILE * fd = NULL;
+    int programSize = 0;
+    char * sourceCode = NULL;
+    cl_program prog;
+
+    // Try to read file and get size of kernel source.
+    fd = fopen(filename, "r");
+    if (!fd) {
+        fprintf(stderr, "%s\n", strerror(errno));
+        *err = EXIT_FAILURE;
+        return 0;
+    }
+    fseek(fd, 0, SEEK_END);
+    programSize = ftell(fd);
+    rewind(fd);
+
+    // Read kernel source into 'sourceCode'.
+    sourceCode = (char*) malloc(programSize + 1);
+    sourceCode[programSize] = '\0';
+    fread(sourceCode, sizeof(char), programSize, fd);
+    fclose(fd);
+
+    // Create program from buffer
+    prog = clCreateProgramWithSource(ctx, 1, (char**) &sourceCode, &programSize, err);
+    free(sourceCode);
+    return prog;
 }
