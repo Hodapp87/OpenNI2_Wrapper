@@ -27,19 +27,43 @@ int oni_STATUS_OUT_OF_FLOW = openni::STATUS_OUT_OF_FLOW;
 int oni_STATUS_NO_DEVICE = openni::STATUS_NO_DEVICE;
 int oni_STATUS_TIME_OUT = openni::STATUS_TIME_OUT;
 
-// These functions and classes are all taken from:
-// http://www.openni.org/wp-content/doxygen/html/annotated.html
-// and are meant to be a thin wrapper.
+// =============
+// openni::Camera
+// =============
+bool oni_getAutoExposureEnabled(oni_CameraSettings * camera) {
+    EXC_CHECK( return camera->getAutoExposureEnabled(); );
+    return false;
+}
+
+bool oni_getAutoWhiteBalanceEnabled(oni_CameraSettings * camera) {
+    EXC_CHECK( return camera->getAutoWhiteBalanceEnabled(); );
+    return false;
+}
+
+bool oni_isValid(oni_CameraSettings * camera) {
+    EXC_CHECK( return camera->isValid(); );
+    return false;
+}
+
+oni_Status oni_setAutoExposureEnabled(oni_CameraSettings * camera, bool enabled) {
+    EXC_CHECK( return camera->setAutoExposureEnabled(enabled); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_setAutoWhiteBalanceEnabled(oni_CameraSettings * camera, bool enabled) {
+    EXC_CHECK( return camera->setAutoWhiteBalanceEnabled(enabled); );
+    return openni::STATUS_ERROR;
+}
 
 // ==============
 // openni::OpenNI
 // ==============
-oni_Status oni_openNI_initialize() {
+oni_Status oni_initialize() {
     EXC_CHECK( return openni::OpenNI::initialize(); );
     return openni::STATUS_ERROR;
 }
 
-const char * oni_openNI_getExtendedError() {
+const char * oni_getExtendedError() {
     EXC_CHECK( return openni::OpenNI::getExtendedError(); );
     return NULL;
 }
@@ -47,21 +71,21 @@ const char * oni_openNI_getExtendedError() {
 // ==============
 // openni::Device
 // ==============
-oni_Device * oni_Device_new() {
+oni_Device * oni_new() {
     openni::Device * device = NULL;
     EXC_CHECK( device = new openni::Device(); );
     return device;
 }
 
-void oni_Device_delete(oni_Device * device) {
+void oni_delete(oni_Device * device) {
     EXC_CHECK( delete device; );
 }
 
-void oni_Device_close(oni_Device * device) {
+void oni_close(oni_Device * device) {
     EXC_CHECK( device->close(); );
 }
 
-oni_DeviceInfo * oni_Device_getDeviceInfo(oni_Device * device) {
+oni_DeviceInfo * oni_getDeviceInfo(oni_Device * device) {
     EXC_CHECK( {
         const openni::DeviceInfo & info = device->getDeviceInfo();
         return (oni_DeviceInfo*) &info;
@@ -69,7 +93,7 @@ oni_DeviceInfo * oni_Device_getDeviceInfo(oni_Device * device) {
     return NULL;
 }
 
-int oni_Device_open(oni_Device * device, const char * uri) {
+int oni_open(oni_Device * device, const char * uri) {
     EXC_CHECK( return device->open(uri); );
     return openni::STATUS_ERROR;
 }
@@ -77,27 +101,27 @@ int oni_Device_open(oni_Device * device, const char * uri) {
 // ==================
 // openni::DeviceInfo
 // ==================
-const char * oni_DeviceInfo_getName(oni_DeviceInfo * info) {
+const char * oni_getName(oni_DeviceInfo * info) {
     EXC_CHECK( return info->getName(); );
     return NULL;
 }
 
-const char * oni_DeviceInfo_getUri(oni_DeviceInfo * info) {
+const char * oni_getUri(oni_DeviceInfo * info) {
     EXC_CHECK( return info->getUri(); );
     return NULL;
 }
 
-uint16_t oni_DeviceInfo_getUsbProductId(oni_DeviceInfo * info) {
+uint16_t oni_getUsbProductId(oni_DeviceInfo * info) {
     EXC_CHECK( return info->getUsbProductId(); );
     return 0;
 }
 
-uint16_t oni_DeviceInfo_getUsbVendorId(oni_DeviceInfo * info) {
+uint16_t oni_getUsbVendorId(oni_DeviceInfo * info) {
     EXC_CHECK( return info->getUsbVendorId(); );
     return 0;
 }
 
-const char * oni_DeviceInfo_getVendor(oni_DeviceInfo * info) {
+const char * oni_getVendor(oni_DeviceInfo * info) {
     EXC_CHECK( return info->getVendor(); );
     return NULL;
 }
