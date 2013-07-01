@@ -34,6 +34,29 @@ oni_SensorType oni_SENSOR_IR = openni::SENSOR_IR;
 oni_SensorType oni_SENSOR_COLOR = openni::SENSOR_COLOR;
 oni_SensorType oni_SENSOR_DEPTH = openni::SENSOR_DEPTH;
 
+oni_PixelFormat PIXEL_FORMAT_DEPTH_1_MM = openni::PIXEL_FORMAT_DEPTH_1_MM;
+oni_PixelFormat PIXEL_FORMAT_DEPTH_100_UM = openni::PIXEL_FORMAT_DEPTH_100_UM;
+oni_PixelFormat PIXEL_FORMAT_SHIFT_9_2 = openni::PIXEL_FORMAT_SHIFT_9_2;
+oni_PixelFormat PIXEL_FORMAT_SHIFT_9_3 = openni::PIXEL_FORMAT_SHIFT_9_3;
+oni_PixelFormat PIXEL_FORMAT_RGB888 = openni::PIXEL_FORMAT_RGB888;
+oni_PixelFormat PIXEL_FORMAT_YUV422 = openni::PIXEL_FORMAT_YUV422;
+oni_PixelFormat PIXEL_FORMAT_GRAY8 = openni::PIXEL_FORMAT_GRAY8;
+oni_PixelFormat PIXEL_FORMAT_GRAY16 = openni::PIXEL_FORMAT_GRAY16;
+oni_PixelFormat PIXEL_FORMAT_JPEG = openni::PIXEL_FORMAT_JPEG;
+
+// ==========================
+// Internal utility functions
+// ==========================
+void _convertDeviceInfo(const openni::DeviceInfo & devInfo,
+                        oni_DeviceInfo * out)
+{
+    out->name = devInfo.getName();
+    out->uri = devInfo.getUri();
+    out->usbProductId = devInfo.getUsbProductId();
+    out->usbVendorId = devInfo.getUsbVendorId();
+    out->vendor = devInfo.getVendor();
+}
+
 // ======================
 // openni::CameraSettings
 // ======================
@@ -115,13 +138,14 @@ oni_Status oni_convertWorldToDepth2(oni_VideoStream * depth, float worldX,
 // ==============
 // openni::Device
 // ==============
-oni_Device * oni_new() {
+
+oni_Device * oni_new_Device() {
     openni::Device * device = NULL;
     EXC_CHECK( device = new openni::Device(); );
     return device;
 }
 
-void oni_delete(oni_Device * device) {
+void oni_delete_Device(oni_Device * device) {
     EXC_CHECK( delete device; );
 }
 
@@ -129,12 +153,20 @@ void oni_close(oni_Device * device) {
     EXC_CHECK( device->close(); );
 }
 
-oni_DeviceInfo * oni_getDeviceInfo(oni_Device * device) {
+oni_DeviceInfo oni_getDeviceInfo(oni_Device * device) {
+    oni_DeviceInfo devInfo;
+    devInfo.name = NULL;
+    devInfo.uri = NULL;
+    devInfo.usbProductId = 0;
+    devInfo.usbVendorId = 0;
+    devInfo.vendor = NULL;
+
     EXC_CHECK( {
         const openni::DeviceInfo & info = device->getDeviceInfo();
-        return (oni_DeviceInfo*) &info;
+        _convertDeviceInfo(info, &devInfo);
     });
-    return NULL;
+
+    return devInfo;
 }
 
 oni_ImageRegistrationMode oni_getImageRegistrationMode(oni_Device * device) {
@@ -212,34 +244,6 @@ oni_Status oni_setProperty(oni_Device * device, int propId, const void * data, i
     return openni::STATUS_ERROR;
 }
 
-// ==================
-// openni::DeviceInfo
-// ==================
-const char * oni_getName(oni_DeviceInfo * info) {
-    EXC_CHECK( return info->getName(); );
-    return NULL;
-}
-
-const char * oni_getUri(oni_DeviceInfo * info) {
-    EXC_CHECK( return info->getUri(); );
-    return NULL;
-}
-
-uint16_t oni_getUsbProductId(oni_DeviceInfo * info) {
-    EXC_CHECK( return info->getUsbProductId(); );
-    return 0;
-}
-
-uint16_t oni_getUsbVendorId(oni_DeviceInfo * info) {
-    EXC_CHECK( return info->getUsbVendorId(); );
-    return 0;
-}
-
-const char * oni_getVendor(oni_DeviceInfo * info) {
-    EXC_CHECK( return info->getVendor(); );
-    return NULL;
-}
-
 // ==============
 // openni::OpenNI
 // ==============
@@ -249,9 +253,28 @@ const char * oni_getVendor(oni_DeviceInfo * info) {
 }
 */
 
-oni_Status oni_initialize() {
-    EXC_CHECK( return openni::OpenNI::initialize(); );
-    return openni::STATUS_ERROR;
+void oni_enumerateDevices(oni_DeviceInfo * out) {
+    EXC_CHECK({
+        openni::Array<openni::DeviceInfo> devices;
+ 
+        openni::OpenNI::enumerateDevices(&devices);
+
+        for (int i = 0; i < devices.getSize(); ++i) {
+            _convertDeviceInfo(devices[i], out + i);
+        }
+    });
+}
+
+int oni_enumerateDevicesCount() {
+    int count = -1;
+    EXC_CHECK({
+        openni::Array<openni::DeviceInfo> devices;
+ 
+        openni::OpenNI::enumerateDevices(&devices);
+
+        count = devices.getSize();
+    });
+    return count;
 }
 
 const char * oni_getExtendedError() {
@@ -268,4 +291,146 @@ oni_Version oni_getVersion() {
     ver_c.major = ver.major;
     ver_c.minor = ver.minor;
     return ver_c;
+}
+
+oni_Status oni_initialize() {
+    EXC_CHECK( return openni::OpenNI::initialize(); );
+    return openni::STATUS_ERROR;
+}
+
+// =======================
+// openni::PlaybackControl
+// =======================
+void oni_delete_PlaybackControl(oni_PlaybackControl * control) {
+    EXC_CHECK( delete control; );
+}
+
+int oni_getNumberOfFrames(oni_PlaybackControl * control,
+                          oni_VideoStream * stream) {
+    EXC_CHECK( return control->getNumberOfFrames(*stream); );
+    return 0;
+}
+
+bool oni_getRepeatEnabled(oni_PlaybackControl * control) {
+    EXC_CHECK( return control->getRepeatEnabled(); );
+    return false;
+}
+
+float oni_getSpeed(oni_PlaybackControl * control) {
+    EXC_CHECK( return control->getSpeed(); );
+    return 0.0;
+}
+
+bool oni_isValid_PlaybackControl(oni_PlaybackControl * control) {
+    EXC_CHECK( return control->isValid(); );
+    return 0.0;
+}
+
+oni_Status oni_seek(oni_PlaybackControl * control, oni_VideoStream * stream,
+                    int frameIndex) {
+    EXC_CHECK( return control->seek(*stream, frameIndex); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_setRepeatEnabled(oni_PlaybackControl * control, bool repeat) {
+    EXC_CHECK( return control->setRepeatEnabled(repeat); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_setSpeed(oni_PlaybackControl * control, float speed) {
+    EXC_CHECK( return control->setSpeed(speed); );
+    return openni::STATUS_ERROR;
+}
+
+// ================
+// openni::Recorder
+// ================
+oni_Recorder * oni_new_Recorder() {
+    EXC_CHECK( return new openni::Recorder(); );
+    return NULL;
+}
+
+void oni_delete_Recorder(oni_Recorder * recorder) {
+    EXC_CHECK( delete recorder; );
+}
+
+oni_Status oni_attach(oni_Recorder * recorder, oni_VideoStream * stream,
+                      bool allowLossy) {
+    EXC_CHECK( return recorder->attach(*stream, allowLossy); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_create(oni_Recorder * recorder, const char * filename) {
+    EXC_CHECK( return recorder->create(filename); );
+    return openni::STATUS_ERROR;
+}
+
+void oni_destroy(oni_Recorder * recorder) {
+    EXC_CHECK( recorder->destroy(); );
+}
+
+bool oni_isValid_Recorder(oni_Recorder * recorder) {
+    EXC_CHECK( return recorder->isValid(); );
+    return false;
+}
+
+oni_Status oni_start(oni_Recorder * recorder) {
+    EXC_CHECK( return recorder->start(); );
+    return openni::STATUS_ERROR;
+}
+
+void oni_stop(oni_Recorder * recorder) {
+    EXC_CHECK( recorder->stop(); );
+}
+
+// =================
+// openni::VideoMode
+// =================
+oni_VideoMode * oni_new_VideoMode(oni_VideoMode * other) {
+    oni_VideoMode * newMode = NULL;
+    EXC_CHECK({
+        newMode = other == NULL ?
+            new openni::VideoMode() :
+            new openni::VideoMode(*other);
+    });
+    return newMode;
+}
+
+oni_VideoMode * oni_copy(oni_VideoMode * mode, oni_VideoMode * source) {
+    EXC_CHECK({
+        openni::VideoMode & newMode = (*mode).operator =(*source);
+        return &newMode;
+    });
+    return NULL;
+}
+
+int oni_getFps(oni_VideoMode * mode) {
+    EXC_CHECK( return mode->getFps(); );
+    return 0;
+}
+
+oni_PixelFormat oni_getPixelFormat(oni_VideoMode * mode) {
+    EXC_CHECK( return mode->getPixelFormat(); );
+}
+
+int oni_getResolutionX(oni_VideoMode * mode) {
+    EXC_CHECK( return mode->getResolutionX(); );
+    return 0;
+}
+
+int oni_getResolutionY(oni_VideoMode * mode) {
+    EXC_CHECK( return mode->getResolutionY(); );
+    return 0;
+}
+
+void oni_setFps(oni_VideoMode * mode, int fps) {
+    EXC_CHECK( mode->setFps(fps); );
+}
+
+void oni_setPixelFormat(oni_VideoMode * mode, oni_PixelFormat format) {
+    EXC_CHECK( mode->setPixelFormat(format); );
+}
+
+void oni_setResolution(oni_VideoMode * mode, int resX, int resY) {
+    EXC_CHECK( mode->setResolution(resX, resY); );
 }
