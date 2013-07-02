@@ -383,6 +383,99 @@ void oni_stop(oni_Recorder * recorder) {
     EXC_CHECK( recorder->stop(); );
 }
 
+// =====================
+// openni::VideoFrameRef
+// =====================
+oni_VideoFrameRef * oni_new_VideoFrameRef(oni_VideoFrameRef * other) {
+    oni_VideoFrameRef * newRef = NULL;
+    EXC_CHECK({
+        newRef = other == NULL ?
+            new openni::VideoFrameRef() :
+            new openni::VideoFrameRef(*other);
+    });
+    return newRef;
+}
+
+void oni_delete_VideoFrameRef(oni_VideoFrameRef * ref) {
+    EXC_CHECK( delete ref; );
+}
+
+oni_VideoFrameRef * oni_copy_VideoFrameRef(oni_VideoFrameRef * ref,
+                                           oni_VideoFrameRef * source) {
+    EXC_CHECK({
+        openni::VideoFrameRef & newRef = (*ref).operator =(*source);
+        return &newRef;
+    });
+    return NULL;
+}
+
+int oni_getCropOriginX(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getCropOriginX(); );
+    return 0;
+}
+
+int oni_getCropOriginY(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getCropOriginY(); );
+    return 0;
+}
+
+bool oni_getCroppingEnabled(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getCroppingEnabled(); );
+    return false;
+}
+
+const void * oni_getData(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getData(); );
+    return NULL;
+}
+
+int oni_getDataSize(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getDataSize(); );
+    return 0;
+}
+
+int oni_getFrameIndex(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getFrameIndex(); );
+    return 0;
+}
+
+int oni_getHeight(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getHeight(); );
+    return 0;
+}
+
+oni_SensorType oni_getSensorType_VideoFrameRef(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getSensorType(); );
+}
+
+int oni_getStrideInBytes(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getStrideInBytes(); );
+    return 0;
+}
+
+uint64_t oni_getTimestamp(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getTimestamp(); );
+    return 0;
+}
+
+oni_VideoMode oni_getVideoMode(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getVideoMode(); );
+}
+
+int oni_getWidth(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->getWidth(); );
+    return 0;
+}
+
+bool oni_isValid_VideoFrameRef(oni_VideoFrameRef * ref) {
+    EXC_CHECK( return ref->isValid(); );
+    return false;
+}
+
+void oni_release_VideoFrameRef(oni_VideoFrameRef * ref) {
+    EXC_CHECK( ref->release(); );
+}
+
 // =================
 // openni::VideoMode
 // =================
@@ -396,7 +489,8 @@ oni_VideoMode * oni_new_VideoMode(oni_VideoMode * other) {
     return newMode;
 }
 
-oni_VideoMode * oni_copy(oni_VideoMode * mode, oni_VideoMode * source) {
+oni_VideoMode * oni_copy_VideoMode(oni_VideoMode * mode,
+                                   oni_VideoMode * source) {
     EXC_CHECK({
         openni::VideoMode & newMode = (*mode).operator =(*source);
         return &newMode;

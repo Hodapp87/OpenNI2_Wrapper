@@ -34,6 +34,7 @@ typedef openni::SensorInfo oni_SensorInfo;
 typedef openni::SensorType oni_SensorType;
 typedef openni::Status oni_Status;
 typedef openni::VideoMode oni_VideoMode;
+typedef openni::VideoFrameRef oni_VideoFrameRef;
 typedef openni::VideoStream oni_VideoStream;
 typedef openni::DepthPixel oni_DepthPixel;
 #else
@@ -48,6 +49,7 @@ typedef struct oni_Listener oni_Listener;
 typedef struct oni_PlaybackControl oni_PlaybackControl;
 typedef struct oni_Recorder oni_Recorder;
 typedef struct oni_SensorInfo oni_SensorInfo;
+typedef struct oni_VideoFrameRef oni_VideoFrameRef;
 typedef struct oni_VideoMode oni_VideoMode;
 typedef struct oni_VideoStream oni_VideoStream;
 typedef uint16_t oni_DepthPixel;
@@ -123,6 +125,10 @@ typedef struct {
 // ======================
 typedef struct { uint8_t r, g, b; } oni_RGB888Pixel;
 
+// =============================
+// openni::oni_YUV422DoublePixel
+// =============================
+typedef struct { uint8_t u, v, y1, y2; } oni_YUV422DoublePixel;
 
 // =============
 // openni::Array
@@ -241,12 +247,36 @@ void oni_stop(oni_Recorder * recorder);
 oni_SensorType oni_getSensorType();
 // Array<VideoMode> getSupportedVideoModes(); ?
 
+// =====================
+// openni::VideoFrameRef
+// =====================
+// oni_new_VideoFrameRef: 'other' can be NULL for default constructor.
+oni_VideoFrameRef * oni_new_VideoFrameRef(oni_VideoFrameRef * other);
+void oni_delete_VideoFrameRef(oni_VideoFrameRef * ref);
+oni_VideoFrameRef * oni_copy_VideoFrameRef(oni_VideoFrameRef * ref,
+                                           oni_VideoFrameRef * source);
+int oni_getCropOriginX(oni_VideoFrameRef * ref);
+int oni_getCropOriginY(oni_VideoFrameRef * ref);
+bool oni_getCroppingEnabled(oni_VideoFrameRef * ref);
+const void * oni_getData(oni_VideoFrameRef * ref);
+int oni_getDataSize(oni_VideoFrameRef * ref);
+int oni_getFrameIndex(oni_VideoFrameRef * ref);
+int oni_getHeight(oni_VideoFrameRef * ref);
+oni_SensorType oni_getSensorType_VideoFrameRef(oni_VideoFrameRef * ref);
+int oni_getStrideInBytes(oni_VideoFrameRef * ref);
+uint64_t oni_getTimestamp(oni_VideoFrameRef * ref);
+oni_VideoMode oni_getVideoMode(oni_VideoFrameRef * ref);
+int oni_getWidth(oni_VideoFrameRef * ref);
+bool oni_isValid_VideoFrameRef(oni_VideoFrameRef * ref);
+void oni_release_VideoFrameRef(oni_VideoFrameRef * ref);
+
 // =================
 // openni::VideoMode
 // =================
 // oni_new_VideoMode: 'other' can be NULL for default constructor.
 oni_VideoMode * oni_new_VideoMode(oni_VideoMode * other);
-oni_VideoMode * oni_copy(oni_VideoMode * source);
+oni_VideoMode * oni_copy_VideoMode(oni_VideoMode * mode,
+                                   oni_VideoMode * source);
 int oni_getFps(oni_VideoMode * mode);
 oni_PixelFormat oni_getPixelFormat(oni_VideoMode * mode);
 int oni_getResolutionX(oni_VideoMode * mode);
