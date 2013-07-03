@@ -18,30 +18,21 @@ enums are wrapped as extern ints.
 (c) Chris Hodapp, 2013
 */
 
+// ============================================================================
+// openni2_c_wrapper.h: Declarations that are for the C interface only
+// (c) Chris Hodapp, 2013
+// ============================================================================
+
 #ifdef __cplusplus
 extern "C" {
-// C++-only typedefs:
-typedef openni::CameraSettings oni_CameraSettings;
-typedef openni::Device oni_Device;
-typedef openni::ImageRegistrationMode oni_ImageRegistrationMode;
-//typedef openni::OpenNI::Listener oni_Listener;
-// TODO Fix this (I don't know what the real Listener class is):
-typedef struct oni_Listener oni_Listener;
-typedef openni::PixelFormat oni_PixelFormat;
-typedef openni::PlaybackControl oni_PlaybackControl;
-typedef openni::Recorder oni_Recorder;
-typedef openni::SensorInfo oni_SensorInfo;
-typedef openni::SensorType oni_SensorType;
-typedef openni::Status oni_Status;
-typedef openni::VideoMode oni_VideoMode;
-typedef openni::VideoFrameRef oni_VideoFrameRef;
-typedef openni::VideoStream oni_VideoStream;
-typedef openni::DepthPixel oni_DepthPixel;
 #else
-// C-only typedefs & declarations
+
 #include <stdbool.h>
 #include <stdint.h>
 
+// ====================
+// Forward Declarations
+// ====================
 typedef struct Array Array;
 typedef struct oni_CameraSettings oni_CameraSettings;
 typedef struct oni_Device oni_Device;
@@ -53,6 +44,15 @@ typedef struct oni_VideoFrameRef oni_VideoFrameRef;
 typedef struct oni_VideoMode oni_VideoMode;
 typedef struct oni_VideoStream oni_VideoStream;
 typedef uint16_t oni_DepthPixel;
+
+// ===================
+// openni::DeviceState
+// ===================
+typedef int oni_DeviceState;
+extern const int oni_DEVICE_STATE_OK;
+extern const int oni_DEVICE_STATE_ERROR;
+extern const int oni_DEVICE_STATE_NOT_READY;
+extern const int oni_DEVICE_STATE_EOF;
 
 // =============================
 // openni::ImageRegistrationMode
@@ -97,11 +97,9 @@ extern const int oni_STATUS_NO_DEVICE;
 extern const int oni_STATUS_TIME_OUT;
 #endif
 
-// Common typedefs
-
-// ======================
-// openni::oni_DeviceInfo
-// ======================
+// ==================
+// openni::DeviceInfo
+// ==================
 typedef struct {
     const char * uri;
     const char * name;
@@ -110,9 +108,18 @@ typedef struct {
     const char * vendor;
 } oni_DeviceInfo;
 
-// ===================
-// openni::oni_Version
-// ===================
+// ==========================================
+// openni::OpenNI::DeviceConnectedListener
+// openni::OpenNI::DeviceDisconnectedListener
+// openni::OpenNI::DeviceStateChangedListener
+// ==========================================
+typedef void (*oni_DeviceConnectedListener) (oni_DeviceInfo*);
+typedef void (*oni_DeviceDisconnectedListener) (oni_DeviceInfo*);
+typedef void (*oni_DeviceStateChangedListener) (oni_DeviceInfo*, oni_DeviceState);
+
+// ===============
+// openni::Version
+// ===============
 typedef struct {
     int build;
     int maintenance;
@@ -120,14 +127,14 @@ typedef struct {
     int minor;
 } oni_Version;
 
-// ======================
-// openni::oni_RGB888Pixel
-// ======================
+// ==================
+// openni::RGB888Pixel
+// ==================
 typedef struct { uint8_t r, g, b; } oni_RGB888Pixel;
 
-// =============================
-// openni::oni_YUV422DoublePixel
-// =============================
+// =========================
+// openni::YUV422DoublePixel
+// =========================
 typedef struct { uint8_t u, v, y1, y2; } oni_YUV422DoublePixel;
 
 // =============
@@ -203,10 +210,11 @@ const char * oni_getVendor(oni_DeviceInfo * info);
 // ==============
 // openni::OpenNI
 // ==============
-oni_Status addDeviceConnectedListener(/* ?  */);
-oni_Status addDeviceDisconnectedListener(/* ?  */);
-oni_Status addDeviceStateChangedListener(/* ?  */);
-// oni_Status oni_addListener(oni_Listener * pListener);
+// All of the oni_addDevice...Listener functions take function pointers rather
+// than class instances.
+oni_Status oni_addDeviceConnectedListener(oni_DeviceConnectedListener fnPtr);
+oni_Status oni_addDeviceDisconnectedListener(oni_DeviceDisconnectedListener fnPtr);
+oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener fnPtr);
 // oni_enumerateDevices: You are responsible for the returned array.
 int oni_enumerateDevicesCount();
 void oni_enumerateDevices(oni_DeviceInfo * out);
@@ -284,7 +292,6 @@ int oni_getResolutionY(oni_VideoMode * mode);
 void oni_setFps(oni_VideoMode * mode, int fps);
 void oni_setPixelFormat(oni_VideoMode * mode, oni_PixelFormat format);
 void oni_setResolution(oni_VideoMode * mode, int resX, int resY);
-
 
 #ifdef __cplusplus
 } // extern "C"

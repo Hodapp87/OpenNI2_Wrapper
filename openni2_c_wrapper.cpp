@@ -1,7 +1,12 @@
+// ============================================================================
+// openni2_c_wrapper.h: Declarations that are largely C-only
 // (c) Chris Hodapp, 2013
+// ============================================================================
+
 #include <OpenNI.h>
 #include <iostream>
 
+#include "openni2_cpp.h"
 #include "openni2_c_wrapper.h"
 
 // EXC_CHECK(block): Wrap the block or statement in an exception check, e.g.
@@ -18,6 +23,11 @@
 // ==========================
 // Static constants for enums
 // ==========================
+oni_DeviceState oni_DEVICE_STATE_OK = openni::DEVICE_STATE_OK;
+oni_DeviceState oni_DEVICE_STATE_ERROR = openni::DEVICE_STATE_ERROR;
+oni_DeviceState oni_DEVICE_STATE_NOT_READY = openni::DEVICE_STATE_NOT_READY;
+oni_DeviceState oni_DEVICE_STATE_EOF = openni::DEVICE_STATE_EOF;
+
 oni_ImageRegistrationMode oni_IMAGE_REGISTRATION_OFF = openni::IMAGE_REGISTRATION_OFF;
 oni_ImageRegistrationMode oni_IMAGE_REGISTRATION_DEPTH_TO_COLOR = openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR;
 
@@ -244,14 +254,82 @@ oni_Status oni_setProperty(oni_Device * device, int propId, const void * data, i
     return openni::STATUS_ERROR;
 }
 
+// ==========================================
+// openni::OpenNI::DeviceConnectedListener
+// openni::OpenNI::DeviceDisconnectedListener
+// openni::OpenNI::DeviceStateChangedListener
+// ==========================================
+// _oni2_listener: The purpose behind this class is to set up a wrapper around
+// the three classes it derives from in such a manner that the C interface,
+// instead of providing an instance of a custom class of each, may instead
+// provide function pointers.
+class _oni2_listener : public openni::OpenNI::DeviceConnectedListener,
+    public openni::OpenNI::DeviceDisconnectedListener,
+    public openni::OpenNI::DeviceStateChangedListener
+{
+public:
+    _oni2_listener() :
+        onDeviceConnectedPtr(NULL),
+        onDeviceDisconnectedPtr(NULL),
+        onDeviceStateChangedPtr(NULL) {
+    }
+
+    // Overrides function in openni::OpenNI::DeviceConnectedListener
+    void onDeviceConnected(const openni::DeviceInfo * dev) {
+        oni_DeviceInfo info;
+        _convertDeviceInfo(*dev, &info);
+        onDeviceConnectedPtr(&info);
+    }
+
+    // Overrides function in openni::OpenNI::DeviceDisconnectedListener
+    void onDeviceDisconnected(const openni::DeviceInfo * dev) {
+        oni_DeviceInfo info;
+        _convertDeviceInfo(*dev, &info);
+        onDeviceDisconnectedPtr(&info);
+    }
+
+    // Overrides function in openni::OpenNI::DeviceStateChangedListener
+    void onDeviceStateChanged(const openni::DeviceInfo * dev,
+                              openni::DeviceState state) {
+        oni_DeviceInfo info;
+        _convertDeviceInfo(*dev, &info);
+        onDeviceStateChangedPtr(&info, state);
+    }
+   
+    oni_DeviceConnectedListener onDeviceConnectedPtr;
+    oni_DeviceDisconnectedListener onDeviceDisconnectedPtr;
+    oni_DeviceStateChangedListener onDeviceStateChangedPtr;
+};
+
 // ==============
 // openni::OpenNI
 // ==============
-/*oni_Status oni_addListener(oni_Listener * pListener) {
-    EXC_CHECK( return openni::OpenNI::addListener(pListener); );
+oni_Status oni_addDeviceConnectedListener(oni_DeviceConnectedListener fnPtr) {
+    // Wrap this function pointer in an ad-hoc member of our subclass:
+    _oni2_listener * connected = new _oni2_listener();
+    connected->onDeviceConnectedPtr = fnPtr;
+    EXC_CHECK( return openni::OpenNI::addDeviceConnectedListener(connected); );
+    return openni::STATUS_ERROR;
+    // N.B. In this function, and the three below, I am assuming that OpenNI is
+    // taking over ownership of the _oni2_listener object, but the docs never
+    // state this.
+}
+
+oni_Status oni_addDeviceDisconnectedListener(oni_DeviceDisconnectedListener fnPtr) {
+    // Wrap this function pointer in an ad-hoc member of our subclass:
+    _oni2_listener * disconnected = new _oni2_listener();
+    disconnected->onDeviceDisconnectedPtr = fnPtr;
+    EXC_CHECK( return openni::OpenNI::addDeviceDisconnectedListener(disconnected); );
     return openni::STATUS_ERROR;
 }
-*/
+
+oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener fnPtr) {
+    // Wrap this function pointer in an ad-hoc member of our subclass:
+    _oni2_listener * stateChanged = new _oni2_listener();
+    stateChanged->onDeviceStateChangedPtr = fnPtr;
+    EXC_CHECK( return openni::OpenNI::addDeviceStateChangedListener(stateChanged); );
+    return openni::STATUS_ERROR;
+}
 
 void oni_enumerateDevices(oni_DeviceInfo * out) {
     EXC_CHECK({
@@ -528,3 +606,4 @@ void oni_setPixelFormat(oni_VideoMode * mode, oni_PixelFormat format) {
 void oni_setResolution(oni_VideoMode * mode, int resX, int resY) {
     EXC_CHECK( mode->setResolution(resX, resY); );
 }
+
