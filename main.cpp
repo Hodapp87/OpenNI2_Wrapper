@@ -21,6 +21,18 @@
 #include <OpenNI.h>
 #include "Viewer.h"
 
+class SimpleConnectedListener : public openni::OpenNI::DeviceConnectedListener
+{
+    void onDeviceConnected(const openni::DeviceInfo * dev)
+    {
+        printf("%s\n", dev->getName());
+        printf("%s\n", dev->getUri());
+        printf("%s\n", dev->getUsbProductId());
+        printf("%s\n", dev->getUsbVendorId());
+        printf("%s\n", dev->getVendor());
+    }
+};
+
 int main(int argc, char** argv)
 {
     openni::Status rc = openni::STATUS_OK;
@@ -34,6 +46,9 @@ int main(int argc, char** argv)
     }
 
     rc = openni::OpenNI::initialize();
+
+    SimpleConnectedListener listen;
+    openni::OpenNI::addDeviceConnectedListener(&listen);
 
     printf("After initialization:\n%s\n", openni::OpenNI::getExtendedError());
 

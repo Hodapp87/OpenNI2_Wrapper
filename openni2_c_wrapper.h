@@ -116,6 +116,7 @@ typedef struct {
 typedef void (*oni_DeviceConnectedListener) (oni_DeviceInfo*);
 typedef void (*oni_DeviceDisconnectedListener) (oni_DeviceInfo*);
 typedef void (*oni_DeviceStateChangedListener) (oni_DeviceInfo*, oni_DeviceState);
+typedef void (*oni_NewFrameListener) (oni_VideoStream*);
 
 // ===============
 // openni::Version
@@ -184,7 +185,7 @@ oni_Status oni_getProperty(oni_Device * device, int propertyId, void * data, int
 // TODO (maybe?): templatized oni_getProperty?
 const oni_SensorInfo * oni_getSensorInfo(oni_Device * device, oni_SensorType sensorType);
 bool oni_hasSensor(oni_Device * device, oni_SensorType sensorType);
-oni_Status oni_invoke(oni_Device * device, int cmdId, const void * data, int dataSize);
+oni_Status oni_invoke_Device(oni_Device * device, int cmdId, const void * data, int dataSize);
 // TODO (maybe?): templatized oni_invoke?
 bool oni_isCommandSupported(oni_Device * device, int cmdId);
 bool oni_isFile(oni_Device * device);
@@ -221,6 +222,13 @@ void oni_enumerateDevices(oni_DeviceInfo * out);
 const char * oni_getExtendedError();
 oni_Version oni_getVersion();
 oni_Status oni_initialize();
+// The same thing applies to the oni_removeDevice functions as oni_addDevice
+//oni_Status oni_removeDeviceConnectedListener(oni_DeviceConnectedListener fnPtr);
+//oni_Status oni_removeDeviceDisconnectedListener(oni_DeviceDisconnectedListener fnPtr);
+//oni_Status oni_removeDeviceStateChangedListener(oni_DeviceStateChangedListener fnPtr);
+// TODO How would these work? The pointer to the class object would have to be
+// the same. This may necessitate a struct rather than a function pointer.
+void oni_shutdown();
 
 // =======================
 // openni::PlaybackControl
@@ -292,6 +300,48 @@ int oni_getResolutionY(oni_VideoMode * mode);
 void oni_setFps(oni_VideoMode * mode, int fps);
 void oni_setPixelFormat(oni_VideoMode * mode, oni_PixelFormat format);
 void oni_setResolution(oni_VideoMode * mode, int resX, int resY);
+
+// ===================
+// openni::VideoStream
+// ===================
+oni_VideoStream * oni_new_VideoStream();
+void oni_delete_VideoStream(oni_VideoStream * stream); 
+//oni_Status oni_addNewFrameListener(NewFrameListener *pListener); 
+oni_Status oni_create_VideoStream(oni_VideoStream * stream, oni_Device * device,
+                                  oni_SensorType sensorType);
+void oni_destroy_VideoStream(oni_VideoStream * stream);
+// oni_getCameraSettings: You do not own the returned object.
+oni_CameraSettings * oni_getCameraSettings(oni_VideoStream * stream);
+bool oni_getCropping(oni_VideoStream * stream, int *pOriginX, int *pOriginY, int *pWidth, int *pHeight);
+float oni_getHorizontalFieldOfView(oni_VideoStream * stream);
+int oni_getMaxPixelValue(oni_VideoStream * stream);
+int oni_getMinPixelValue(oni_VideoStream * stream);
+bool oni_getMirroringEnabled(oni_VideoStream * stream);
+oni_Status oni_getProperty_VideoStream(oni_VideoStream * stream, int propertyId,
+                                       void *data, int *dataSize);
+//template<class T> Status getProperty (int propertyId, T *value) const
+oni_SensorInfo * oni_getSensorInfo_VideoStream(oni_VideoStream * stream);
+float oni_getVerticalFieldOfView(oni_VideoStream * stream);
+// oni_getVideoMode_VideoStream: You must delete this object when done.
+oni_VideoMode * oni_getVideoMode_VideoStream(oni_VideoStream * stream);
+oni_Status oni_invoke_VideoStream(oni_VideoStream * stream, int commandId, void *data, int dataSize);
+//template<class T> Status invoke (int commandId, const T &value)
+bool oni_isCommandSupported_VideoStream(oni_VideoStream * stream, int commandId);
+bool oni_isCroppingSupported(oni_VideoStream * stream);
+bool oni_isPropertySupported_VideoStream(oni_VideoStream * stream, int propertyId);
+bool oni_isValid_VideoStream(oni_VideoStream * stream);
+oni_Status oni_readFrame(oni_VideoStream * stream, oni_VideoFrameRef *pFrame);
+//void oni_removeNewFrameListener(NewFrameListener *pListener)
+oni_Status oni_resetCropping(oni_VideoStream * stream);
+oni_Status oni_setCropping(oni_VideoStream * stream, int originX, int originY, int width, int height);
+oni_Status oni_setMirroringEnabled(oni_VideoStream * stream, bool isEnabled);
+oni_Status oni_setProperty_VideoStream(oni_VideoStream * stream, int propertyId,
+                                       const void *data, int dataSize);
+// template<class T > Status setProperty (int propertyId, const T &value)
+oni_Status oni_setVideoMode(oni_VideoStream * stream,
+                            oni_VideoMode * videoMode);
+oni_Status oni_start_VideoStream(oni_VideoStream * stream);
+void oni_stop_VideoStream(oni_VideoStream * stream);
 
 #ifdef __cplusplus
 } // extern "C"

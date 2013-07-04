@@ -260,18 +260,20 @@ oni_Status oni_setProperty(oni_Device * device, int propId, const void * data, i
 // openni::OpenNI::DeviceStateChangedListener
 // ==========================================
 // _oni2_listener: The purpose behind this class is to set up a wrapper around
-// the three classes it derives from in such a manner that the C interface,
-// instead of providing an instance of a custom class of each, may instead
-// provide function pointers.
+// the classes it derives from in such a manner that the C interface, instead of
+// providing an instance of a custom class of each, may instead provide function
+// pointers.
 class _oni2_listener : public openni::OpenNI::DeviceConnectedListener,
-    public openni::OpenNI::DeviceDisconnectedListener,
-    public openni::OpenNI::DeviceStateChangedListener
+                       public openni::OpenNI::DeviceDisconnectedListener,
+                       public openni::OpenNI::DeviceStateChangedListener,
+                       public openni::VideoStream::NewFrameListener
 {
 public:
     _oni2_listener() :
         onDeviceConnectedPtr(NULL),
         onDeviceDisconnectedPtr(NULL),
-        onDeviceStateChangedPtr(NULL) {
+        onDeviceStateChangedPtr(NULL),
+        onNewFramePtr(NULL) {
     }
 
     // Overrides function in openni::OpenNI::DeviceConnectedListener
@@ -295,10 +297,17 @@ public:
         _convertDeviceInfo(*dev, &info);
         onDeviceStateChangedPtr(&info, state);
     }
+
+    // Overrides function in openni::VideoStream::NewFrameListener
+    void onNewFrame(openni::VideoStream & stream) {
+        oni_VideoStream * streamPtr = &stream;
+        onNewFramePtr(streamPtr);
+    }
    
     oni_DeviceConnectedListener onDeviceConnectedPtr;
     oni_DeviceDisconnectedListener onDeviceDisconnectedPtr;
     oni_DeviceStateChangedListener onDeviceStateChangedPtr;
+    oni_NewFrameListener onNewFramePtr;
 };
 
 // ==============
@@ -374,6 +383,10 @@ oni_Version oni_getVersion() {
 oni_Status oni_initialize() {
     EXC_CHECK( return openni::OpenNI::initialize(); );
     return openni::STATUS_ERROR;
+}
+
+void oni_shutdown() {
+    EXC_CHECK( openni::OpenNI::shutdown(); );
 }
 
 // =======================
@@ -607,3 +620,151 @@ void oni_setResolution(oni_VideoMode * mode, int resX, int resY) {
     EXC_CHECK( mode->setResolution(resX, resY); );
 }
 
+// ===================
+// openni::VideoStream
+// ===================
+oni_VideoStream * oni_new_VideoStream() {
+    EXC_CHECK( return new openni::VideoStream(); );
+    return NULL;
+}
+
+void oni_delete_VideoStream(oni_VideoStream * stream) {
+    EXC_CHECK( delete stream; );
+} 
+
+oni_Status oni_create_VideoStream(oni_VideoStream * stream, oni_Device * device,
+                                  oni_SensorType sensorType) {
+    EXC_CHECK( return stream->create(*device, sensorType); );
+    return openni::STATUS_ERROR;
+}
+
+void oni_destroy_VideoStream(oni_VideoStream * stream) {
+    EXC_CHECK( stream->destroy(); );
+}
+
+oni_CameraSettings * oni_getCameraSettings(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->getCameraSettings(); );
+    return NULL;
+}
+
+bool oni_getCropping(oni_VideoStream * stream, int *pOriginX, int *pOriginY,
+                     int *pWidth, int *pHeight) {
+    EXC_CHECK( return stream->getCropping(pOriginX, pOriginY, pWidth, pHeight); );
+    return false;
+}
+
+float oni_getHorizontalFieldOfView(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->getHorizontalFieldOfView(); );
+    return 0.0;
+}
+
+int oni_getMaxPixelValue(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->getMaxPixelValue(); );
+    return 0;
+}
+
+int oni_getMinPixelValue(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->getMinPixelValue(); );
+    return 0;
+}
+
+bool oni_getMirroringEnabled(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->getMirroringEnabled(); );
+    return false;
+}
+
+oni_Status oni_getProperty_VideoStream(oni_VideoStream * stream, int propertyId,
+                                       void *data, int *dataSize) {
+    EXC_CHECK( return stream->getProperty(propertyId, data, dataSize); );
+    return openni::STATUS_ERROR;
+}
+
+oni_SensorInfo * oni_getSensorInfo_VideoStream(oni_VideoStream * stream) {
+    EXC_CHECK({
+        const openni::SensorInfo & info = stream->getSensorInfo();
+        return (oni_SensorInfo*) &info;
+    });
+    return NULL;
+}
+
+float oni_getVerticalFieldOfView(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->getVerticalFieldOfView(); );
+    return 0.0;
+}
+
+oni_VideoMode * oni_getVideoMode_VideoStream(oni_VideoStream * stream) {
+    EXC_CHECK({
+        openni::VideoMode * mode = new openni::VideoMode(stream->getVideoMode());
+        return mode;
+    });
+    return NULL;
+}
+
+oni_Status oni_invoke_VideoStream(oni_VideoStream * stream, int commandId,
+                                  void *data, int dataSize) {
+    EXC_CHECK( return stream->invoke(commandId, data, dataSize); );
+    return openni::STATUS_ERROR;
+}
+
+bool oni_isCommandSupported_VideoStream(oni_VideoStream * stream, int commandId) {
+    EXC_CHECK( return stream->isCommandSupported(commandId); );
+    return false;
+}
+
+bool oni_isCroppingSupported(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->isCroppingSupported(); );
+    return false;
+}
+
+bool oni_isPropertySupported_VideoStream(oni_VideoStream * stream, int propertyId) {
+    EXC_CHECK( return stream->isPropertySupported(propertyId); );
+    return false;
+}
+
+bool oni_isValid_VideoStream(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->isValid(); );
+    return false;
+}
+
+oni_Status oni_readFrame(oni_VideoStream * stream, oni_VideoFrameRef *pFrame) {
+    EXC_CHECK( return stream->readFrame(pFrame); );
+    return openni::STATUS_ERROR;
+}
+
+//void oni_removeNewFrameListener(NewFrameListener *pListener)
+oni_Status oni_resetCropping(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->resetCropping(); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_setCropping(oni_VideoStream * stream, int originX, int originY, int width, int height) {
+    EXC_CHECK( return stream->setCropping(originX, originY, width, height); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_setMirroringEnabled(oni_VideoStream * stream, bool isEnabled) {
+    EXC_CHECK( return stream->setMirroringEnabled(isEnabled); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_setProperty_VideoStream(oni_VideoStream * stream, int propertyId,
+                                       const void *data, int dataSize) {
+    EXC_CHECK( return stream->setProperty(propertyId, data, dataSize); );
+    return openni::STATUS_ERROR;
+}
+
+// template<class T > Status setProperty (int propertyId, const T &value)
+oni_Status oni_setVideoMode(oni_VideoStream * stream,
+                            oni_VideoMode * videoMode) {
+    EXC_CHECK( return stream->setVideoMode(*videoMode); );
+    return openni::STATUS_ERROR;
+}
+
+oni_Status oni_start_VideoStream(oni_VideoStream * stream) {
+    EXC_CHECK( return stream->start(); );
+    return openni::STATUS_ERROR;
+}
+
+void oni_stop_VideoStream(oni_VideoStream * stream) {
+    EXC_CHECK( stream->stop(); );
+}
