@@ -1,142 +1,16 @@
-/*
-This is a C wrapper to the OpenNI2 library (which has of course a C++ interface).
-
-These functions and classes are all taken from:
-http://www.openni.org/wp-content/doxygen/html/annotated.html
-
-I'm aiming to keep it as close as possible to the interface while being
-C-compatible.  Every function name, type name, and constant name should match
-the naming in OpenNI2, except for a few things:
- - Using a prefix of "oni_" rather than the "openni" namespace
- - Using a suffix of "_new" and "_delete" for constructor and destructor,
-respectively.
- - Making some allowances for overloaded or templatized functions (still to be
-determined...), and for name conflicts (e.g. isValid)
-
-enums are wrapped as extern ints.
-
-(c) Chris Hodapp, 2013
-*/
-
 // ============================================================================
-// openni2_c_wrapper.h: Declarations that are for the C interface only
+// openni2_c_wrapper.h: Function declarations for the C interface
 // (c) Chris Hodapp, 2013
 // ============================================================================
 
+#ifndef OPENNI2_WRAPPER
+#define OPENNI2_WRAPPER
+
+#include "openni2_types.h"
+
 #ifdef __cplusplus
 extern "C" {
-#else
-
-#include <stdbool.h>
-#include <stdint.h>
-
-// ====================
-// Forward Declarations
-// ====================
-typedef struct Array Array;
-typedef struct oni_CameraSettings oni_CameraSettings;
-typedef struct oni_Device oni_Device;
-typedef struct oni_Listener oni_Listener;
-typedef struct oni_PlaybackControl oni_PlaybackControl;
-typedef struct oni_Recorder oni_Recorder;
-typedef struct oni_SensorInfo oni_SensorInfo;
-typedef struct oni_VideoFrameRef oni_VideoFrameRef;
-typedef struct oni_VideoMode oni_VideoMode;
-typedef struct oni_VideoStream oni_VideoStream;
-typedef uint16_t oni_DepthPixel;
-
-// ===================
-// openni::DeviceState
-// ===================
-typedef int oni_DeviceState;
-extern const int oni_DEVICE_STATE_OK;
-extern const int oni_DEVICE_STATE_ERROR;
-extern const int oni_DEVICE_STATE_NOT_READY;
-extern const int oni_DEVICE_STATE_EOF;
-
-// =============================
-// openni::ImageRegistrationMode
-// =============================
-typedef int oni_ImageRegistrationMode;
-extern const int oni_IMAGE_REGISTRATION_OFF;
-extern const int oni_IMAGE_REGISTRATION_DEPTH_TO_COLOR;
-
-// ==================
-// openni::SensorType
-// ==================
-typedef int oni_SensorType;
-extern const int oni_SENSOR_IR;
-extern const int oni_SENSOR_COLOR;
-extern const int oni_SENSOR_DEPTH;
-
-// ==================
-// openni::SensorType
-// ==================
-typedef int oni_PixelFormat;
-extern const int PIXEL_FORMAT_DEPTH_1_MM;
-extern const int PIXEL_FORMAT_DEPTH_100_UM;
-extern const int PIXEL_FORMAT_SHIFT_9_2;
-extern const int PIXEL_FORMAT_SHIFT_9_3;
-extern const int PIXEL_FORMAT_RGB888;
-extern const int PIXEL_FORMAT_YUV422;
-extern const int PIXEL_FORMAT_GRAY8;
-extern const int PIXEL_FORMAT_GRAY16;
-extern const int PIXEL_FORMAT_JPEG;
-
-// ==============
-// openni::Status
-// ==============
-typedef int oni_Status;
-extern const int oni_STATUS_OK;
-extern const int oni_STATUS_ERROR;
-extern const int oni_STATUS_NOT_IMPLEMENTED;
-extern const int oni_STATUS_NOT_SUPPORTED;
-extern const int oni_STATUS_BAD_PARAMETER;
-extern const int oni_STATUS_OUT_OF_FLOW;
-extern const int oni_STATUS_NO_DEVICE;
-extern const int oni_STATUS_TIME_OUT;
 #endif
-
-// ==================
-// openni::DeviceInfo
-// ==================
-typedef struct {
-    const char * uri;
-    const char * name;
-    uint16_t usbProductId;
-    uint16_t usbVendorId;
-    const char * vendor;
-} oni_DeviceInfo;
-
-// ==========================================
-// openni::OpenNI::DeviceConnectedListener
-// openni::OpenNI::DeviceDisconnectedListener
-// openni::OpenNI::DeviceStateChangedListener
-// ==========================================
-typedef void (*oni_DeviceConnectedListener) (oni_DeviceInfo*);
-typedef void (*oni_DeviceDisconnectedListener) (oni_DeviceInfo*);
-typedef void (*oni_DeviceStateChangedListener) (oni_DeviceInfo*, oni_DeviceState);
-typedef void (*oni_NewFrameListener) (oni_VideoStream*);
-
-// ===============
-// openni::Version
-// ===============
-typedef struct {
-    int build;
-    int maintenance;
-    int major;
-    int minor;
-} oni_Version;
-
-// ==================
-// openni::RGB888Pixel
-// ==================
-typedef struct { uint8_t r, g, b; } oni_RGB888Pixel;
-
-// =========================
-// openni::YUV422DoublePixel
-// =========================
-typedef struct { uint8_t u, v, y1, y2; } oni_YUV422DoublePixel;
 
 // =============
 // openni::Array
@@ -346,3 +220,5 @@ void oni_stop_VideoStream(oni_VideoStream * stream);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif // OPENNI2_WRAPPER

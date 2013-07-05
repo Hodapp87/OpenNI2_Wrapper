@@ -1,13 +1,14 @@
 // ============================================================================
-// openni2_c_wrapper.h: Declarations that are largely C-only
+// openni2_c_wrapper.h: Function declarations
 // (c) Chris Hodapp, 2013
 // ============================================================================
 
 #include <OpenNI.h>
 #include <iostream>
 
-#include "openni2_cpp.h"
-#include "openni2_c_wrapper.h"
+#include "openni2_types_cxx.h"
+#include "openni2_types.h"
+#include "openni2_wrapper.h"
 
 // EXC_CHECK(block): Wrap the block or statement in an exception check, e.g.
 //     EXC_CHECK( delete ptr; )

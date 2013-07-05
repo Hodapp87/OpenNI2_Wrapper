@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "openni2_c_wrapper.h"
+#include "openni2_c.h"
 
 void listDevices();
 void echoDeviceInfo(oni_DeviceInfo info);

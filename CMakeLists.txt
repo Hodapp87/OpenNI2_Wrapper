@@ -7,7 +7,7 @@ message(${CMAKE_MODULE_PATH})
 project (Surfactant)
 add_executable(Viewer Viewer.cpp main.cpp)
 add_executable(OpenCL_example opencl_test.c)
-add_library(openni2_c_wrapper SHARED openni2_c_wrapper.cpp)
+add_library(openni2_c_wrapper SHARED openni2_wrapper.cxx)
 add_executable(openni2_c_wrapper_test openni2_c_test.c)
 
 # helpful: cmake --help-module FindGLUT
