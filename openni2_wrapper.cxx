@@ -9,6 +9,7 @@
 #include "openni2_types_cxx.h"
 #include "openni2_types.h"
 #include "openni2_wrapper.h"
+#include "openni2_listener_wrapper.h"
 
 // EXC_CHECK(block): Wrap the block or statement in an exception check, e.g.
 //     EXC_CHECK( delete ptr; )
@@ -260,94 +261,98 @@ oni_Status oni_setProperty(oni_Device * device, int propId, const void * data, i
 // openni::OpenNI::DeviceDisconnectedListener
 // openni::OpenNI::DeviceStateChangedListener
 // ==========================================
-// _oni2_listener: The purpose behind this class is to set up a wrapper around
-// the classes it derives from in such a manner that the C interface, instead of
-// providing an instance of a custom class of each, may instead provide function
-// pointers.
-class _oni2_listener : public openni::OpenNI::DeviceConnectedListener,
-                       public openni::OpenNI::DeviceDisconnectedListener,
-                       public openni::OpenNI::DeviceStateChangedListener,
-                       public openni::VideoStream::NewFrameListener
+openni2_listener_wrapper::openni2_listener_wrapper()
 {
-public:
-    _oni2_listener() :
-        onDeviceConnectedPtr(NULL),
-        onDeviceDisconnectedPtr(NULL),
-        onDeviceStateChangedPtr(NULL),
-        onNewFramePtr(NULL) {
-    }
+    onDeviceConnected_c.fnPtr = NULL;
+    onDeviceConnected_c._obj = NULL;
+    onDeviceDisconnected_c.fnPtr = NULL;
+    onDeviceDisconnected_c._obj = NULL;
+    onDeviceStateChanged_c.fnPtr = NULL;
+    onDeviceStateChanged_c._obj = NULL;
+    onNewFrame_c.fnPtr = NULL;
+    onNewFrame_c._obj = NULL;
+}
 
-    // Overrides function in openni::OpenNI::DeviceConnectedListener
-    void onDeviceConnected(const openni::DeviceInfo * dev) {
-        oni_DeviceInfo info;
-        _convertDeviceInfo(*dev, &info);
-        onDeviceConnectedPtr(&info);
-    }
+void openni2_listener_wrapper::onDeviceConnected(const openni::DeviceInfo * dev) {
+    oni_DeviceInfo info;
+    _convertDeviceInfo(*dev, &info);
+    onDeviceConnected_c.fnPtr(&info);
+}
 
-    // Overrides function in openni::OpenNI::DeviceDisconnectedListener
-    void onDeviceDisconnected(const openni::DeviceInfo * dev) {
-        oni_DeviceInfo info;
-        _convertDeviceInfo(*dev, &info);
-        onDeviceDisconnectedPtr(&info);
-    }
+void openni2_listener_wrapper::onDeviceDisconnected(const openni::DeviceInfo * dev) {
+    oni_DeviceInfo info;
+    _convertDeviceInfo(*dev, &info);
+    onDeviceDisconnected_c.fnPtr(&info);
+}
 
-    // Overrides function in openni::OpenNI::DeviceStateChangedListener
-    void onDeviceStateChanged(const openni::DeviceInfo * dev,
-                              openni::DeviceState state) {
-        oni_DeviceInfo info;
-        _convertDeviceInfo(*dev, &info);
-        onDeviceStateChangedPtr(&info, state);
-    }
+void openni2_listener_wrapper::onDeviceStateChanged(const openni::DeviceInfo * dev,
+                                                    openni::DeviceState state) {
+    oni_DeviceInfo info;
+    _convertDeviceInfo(*dev, &info);
+    onDeviceStateChanged_c.fnPtr(&info, state);
+}
 
-    // Overrides function in openni::VideoStream::NewFrameListener
-    void onNewFrame(openni::VideoStream & stream) {
-        oni_VideoStream * streamPtr = &stream;
-        onNewFramePtr(streamPtr);
-    }
-   
-    oni_DeviceConnectedListener onDeviceConnectedPtr;
-    oni_DeviceDisconnectedListener onDeviceDisconnectedPtr;
-    oni_DeviceStateChangedListener onDeviceStateChangedPtr;
-    oni_NewFrameListener onNewFramePtr;
-};
+void openni2_listener_wrapper::onNewFrame(openni::VideoStream & stream) {
+    oni_VideoStream * streamPtr = &stream;
+    onNewFrame_c.fnPtr(streamPtr);
+}
 
 // ==============
 // openni::OpenNI
 // ==============
-oni_Status oni_addDeviceConnectedListener(oni_DeviceConnectedListener fnPtr) {
+oni_Status oni_addDeviceConnectedListener(oni_DeviceConnectedListener * listen) {
     // Wrap this function pointer in an ad-hoc member of our subclass:
-    _oni2_listener * connected = new _oni2_listener();
-    connected->onDeviceConnectedPtr = fnPtr;
-    EXC_CHECK( return openni::OpenNI::addDeviceConnectedListener(connected); );
-    return openni::STATUS_ERROR;
+    openni2_listener_wrapper * connected = new openni2_listener_wrapper();
+    connected->onDeviceConnected_c.fnPtr = listen->fnPtr;
+    connected->onDeviceConnected_c._obj = connected;
+    oni_Status rc = openni::STATUS_ERROR;
+    EXC_CHECK({
+        rc = openni::OpenNI::addDeviceConnectedListener(connected);
+        listen->_obj = connected;
+    });
+    return rc;
     // N.B. In this function, and the three below, I am assuming that OpenNI is
-    // taking over ownership of the _oni2_listener object, but the docs never
-    // state this.
+    // taking over ownership of the openni2_listener_wrapper object, but the docs
+    // never state this.
 }
 
-oni_Status oni_addDeviceDisconnectedListener(oni_DeviceDisconnectedListener fnPtr) {
+oni_Status oni_addDeviceDisconnectedListener(oni_DeviceDisconnectedListener * listen) {
     // Wrap this function pointer in an ad-hoc member of our subclass:
-    _oni2_listener * disconnected = new _oni2_listener();
-    disconnected->onDeviceDisconnectedPtr = fnPtr;
-    EXC_CHECK( return openni::OpenNI::addDeviceDisconnectedListener(disconnected); );
-    return openni::STATUS_ERROR;
+    openni2_listener_wrapper * connected = new openni2_listener_wrapper();
+    connected->onDeviceDisconnected_c.fnPtr = listen->fnPtr;
+    connected->onDeviceDisconnected_c._obj = connected;
+    oni_Status rc = openni::STATUS_ERROR;
+    EXC_CHECK({
+        rc = openni::OpenNI::addDeviceDisconnectedListener(connected);
+        listen->_obj = connected;
+    });
+    return rc;
 }
 
-oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener fnPtr) {
-    // Wrap this function pointer in an ad-hoc member of our subclass:
-    _oni2_listener * stateChanged = new _oni2_listener();
-    stateChanged->onDeviceStateChangedPtr = fnPtr;
-    EXC_CHECK( return openni::OpenNI::addDeviceStateChangedListener(stateChanged); );
-    return openni::STATUS_ERROR;
+oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener * listen) {
+    openni2_listener_wrapper * connected = new openni2_listener_wrapper();
+    connected->onDeviceStateChanged_c.fnPtr = listen->fnPtr;
+    connected->onDeviceStateChanged_c._obj = connected;
+    oni_Status rc = openni::STATUS_ERROR;
+    EXC_CHECK({
+        rc = openni::OpenNI::addDeviceStateChangedListener(connected);
+        listen->_obj = connected;
+    });
+    return rc;
 }
 
-void oni_enumerateDevices(oni_DeviceInfo * out) {
+void oni_enumerateDevices(oni_DeviceInfo * out, int maxDevices) {
     EXC_CHECK({
         openni::Array<openni::DeviceInfo> devices;
  
         openni::OpenNI::enumerateDevices(&devices);
 
-        for (int i = 0; i < devices.getSize(); ++i) {
+        int count = devices.getSize();
+        if (count > maxDevices && maxDevices >= 0) {
+            count = maxDevices;
+        }
+
+        for (int i = 0; i < count; ++i) {
             _convertDeviceInfo(devices[i], out + i);
         }
     });
@@ -384,6 +389,18 @@ oni_Version oni_getVersion() {
 oni_Status oni_initialize() {
     EXC_CHECK( return openni::OpenNI::initialize(); );
     return openni::STATUS_ERROR;
+}
+
+void oni_removeDeviceConnectedListener(oni_DeviceConnectedListener listen) {
+    EXC_CHECK( openni::OpenNI::removeDeviceConnectedListener(listen._obj); );
+}
+
+void oni_removeDeviceDisconnectedListener(oni_DeviceDisconnectedListener listen) {
+    EXC_CHECK( openni::OpenNI::removeDeviceDisconnectedListener(listen._obj); );
+}
+
+void oni_removeDeviceStateChangedListener(oni_DeviceStateChangedListener listen) {
+    EXC_CHECK( openni::OpenNI::removeDeviceStateChangedListener(listen._obj); );
 }
 
 void oni_shutdown() {
@@ -633,6 +650,20 @@ void oni_delete_VideoStream(oni_VideoStream * stream) {
     EXC_CHECK( delete stream; );
 } 
 
+oni_Status oni_addNewFrameListener(oni_VideoStream * stream,
+                                   oni_NewFrameListener * listen) {
+    // Wrap this function pointer in an ad-hoc member of our subclass:
+    openni2_listener_wrapper * connected = new openni2_listener_wrapper();
+    connected->onNewFrame_c.fnPtr = listen->fnPtr;
+    connected->onNewFrame_c._obj = connected;
+    oni_Status rc = openni::STATUS_ERROR;
+    EXC_CHECK({
+        rc = stream->addNewFrameListener(connected);
+        listen->_obj = connected;
+    });
+    return rc;
+}
+
 oni_Status oni_create_VideoStream(oni_VideoStream * stream, oni_Device * device,
                                   oni_SensorType sensorType) {
     EXC_CHECK( return stream->create(*device, sensorType); );
@@ -732,7 +763,11 @@ oni_Status oni_readFrame(oni_VideoStream * stream, oni_VideoFrameRef *pFrame) {
     return openni::STATUS_ERROR;
 }
 
-//void oni_removeNewFrameListener(NewFrameListener *pListener)
+void oni_removeNewFrameListener(oni_VideoStream * stream,
+                                oni_NewFrameListener * listen) {
+    EXC_CHECK( stream->removeNewFrameListener(listen->_obj); );
+}
+
 oni_Status oni_resetCropping(oni_VideoStream * stream) {
     EXC_CHECK( return stream->resetCropping(); );
     return openni::STATUS_ERROR;

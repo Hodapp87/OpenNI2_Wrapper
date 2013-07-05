@@ -25,6 +25,16 @@ typedef struct oni_VideoFrameRef oni_VideoFrameRef;
 typedef struct oni_VideoMode oni_VideoMode;
 typedef struct oni_VideoStream oni_VideoStream;
 typedef uint16_t oni_DepthPixel;
+// These four are still opaque pointers, but they are never used in the C
+// interface directly.
+typedef struct oni_DeviceConnectedListener_cxx
+    oni_DeviceConnectedListener_cxx;
+typedef struct oni_DeviceDisconnectedListener_cxx
+    oni_DeviceDisconnectedListener_cxx;
+typedef struct oni_DeviceStateChangedListener_cxx
+    oni_DeviceStateChangedListener_cxx;
+typedef struct oni_NewFrameListener_cxx
+    oni_NewFrameListener_cxx;
 
 // ========================================
 // openni::DeviceState  ->  oni_DeviceState

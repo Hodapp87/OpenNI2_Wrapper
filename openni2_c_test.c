@@ -14,26 +14,31 @@ int main(int argc, const char ** argv) {
     int rc;
 
 
-    oni_DeviceConnectedListener fnPtr = &deviceConnect;
-    oni_DeviceDisconnectedListener fnPtr2 = &deviceDisconnect;
-    oni_DeviceStateChangedListener fnPtr3 = &deviceStateChange;
+    oni_DeviceConnectedListener listen1;
+    oni_DeviceDisconnectedListener listen2;
+    oni_DeviceStateChangedListener listen3;
 
+    listen1.fnPtr = &deviceConnect;
+    listen2.fnPtr = &deviceDisconnect;
+    listen3.fnPtr = &deviceStateChange;
     //const char * err = oni_getExtendedError();
     //printf("Extended error: %s\n", err);
 
-    //listDevices();
     rc = oni_initialize();
 
     if (rc == oni_STATUS_OK) {
-        rc = oni_addDeviceConnectedListener(fnPtr);
+        rc = oni_addDeviceConnectedListener(&listen1);
         printf("rc=%d\n", rc);
-        rc = oni_addDeviceDisconnectedListener(fnPtr2);
+        rc = oni_addDeviceDisconnectedListener(&listen2);
         printf("rc=%d\n", rc);
-        rc = oni_addDeviceStateChangedListener(fnPtr3);
+        rc = oni_addDeviceStateChangedListener(&listen3);
         printf("rc=%d\n", rc);
 
+        listDevices();
+
         while (1) {
-            usleep(1000);
+            usleep(500000);
+            listDevices();
         }
         /*
         oni_Device * device = oni_new_Device();
@@ -67,7 +72,8 @@ void listDevices() {
 
     deviceCount = oni_enumerateDevicesCount();
     devices = (oni_DeviceInfo *) malloc(deviceCount * sizeof(oni_DeviceInfo));
-    oni_enumerateDevices(devices);
+    oni_enumerateDevices(devices, deviceCount);
+    printf("OpenNI reported %d devices\n", deviceCount);
 
     for (i = 0; i < deviceCount; ++i) {
         printf("Device %d:\n", i);

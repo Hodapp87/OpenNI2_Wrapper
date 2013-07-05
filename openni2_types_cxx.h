@@ -27,6 +27,16 @@ typedef openni::VideoMode oni_VideoMode;
 typedef openni::VideoFrameRef oni_VideoFrameRef;
 typedef openni::VideoStream oni_VideoStream;
 typedef openni::DepthPixel oni_DepthPixel;
+// These four are still opaque pointers, but they are never used in the C
+// interface directly.
+typedef openni::OpenNI::DeviceConnectedListener
+    oni_DeviceConnectedListener_cxx;
+typedef openni::OpenNI::DeviceDisconnectedListener
+    oni_DeviceDisconnectedListener_cxx;
+typedef openni::OpenNI::DeviceStateChangedListener
+    oni_DeviceStateChangedListener_cxx;
+typedef openni::VideoStream::NewFrameListener
+    oni_NewFrameListener_cxx;
 
 // ==================
 // Typedefs for enums

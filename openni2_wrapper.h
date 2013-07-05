@@ -24,7 +24,8 @@ bool oni_getAutoExposureEnabled(oni_CameraSettings * camera);
 bool oni_getAutoWhiteBalanceEnabled(oni_CameraSettings * camera);
 bool oni_CameraSettings_isValid(oni_CameraSettings * camera);
 oni_Status oni_setAutoExposureEnabled(oni_CameraSettings * camera, bool enabled);
-oni_Status oni_setAutoWhiteBalanceEnabled(oni_CameraSettings * camera, bool enabled);
+oni_Status oni_setAutoWhiteBalanceEnabled(oni_CameraSettings * camera,
+                                          bool enabled);
 
 // ===========================
 // openni::CoordinateConverter
@@ -51,26 +52,31 @@ oni_Status oni_convertWorldToDepth2(
 oni_Device * oni_new_Device();
 void oni_delete_Device(oni_Device * device);
 void oni_close(oni_Device * device);
-// oni_getDeviceInfo: Do not modify the returned pointers!
+// oni_getDeviceInfo: Do not modify the returned pointers.
 oni_DeviceInfo oni_getDeviceInfo(oni_Device * device);
 oni_ImageRegistrationMode oni_getImageRegistrationMode(oni_Device * device);
 oni_PlaybackControl * oni_getPlaybackControl(oni_Device * device);
-oni_Status oni_getProperty(oni_Device * device, int propertyId, void * data, int * dataSize);
-// TODO (maybe?): templatized oni_getProperty?
-const oni_SensorInfo * oni_getSensorInfo(oni_Device * device, oni_SensorType sensorType);
+oni_Status oni_getProperty(oni_Device * device, int propertyId, void * data,
+                           int * dataSize);
+const oni_SensorInfo * oni_getSensorInfo(oni_Device * device,
+                                         oni_SensorType sensorType);
 bool oni_hasSensor(oni_Device * device, oni_SensorType sensorType);
-oni_Status oni_invoke_Device(oni_Device * device, int cmdId, const void * data, int dataSize);
-// TODO (maybe?): templatized oni_invoke?
+oni_Status oni_invoke_Device(oni_Device * device, int cmdId, const void * data,
+                             int dataSize);
 bool oni_isCommandSupported(oni_Device * device, int cmdId);
 bool oni_isFile(oni_Device * device);
-bool oni_isImageRegistrationModeSupported(oni_Device * device, oni_ImageRegistrationMode mode);
+bool oni_isImageRegistrationModeSupported(oni_Device * device,
+                                          oni_ImageRegistrationMode mode);
 bool oni_isPropertySupported(oni_Device * device, int propertyId);
 bool oni_Device_isValid(oni_Device * device);
 oni_Status oni_open(oni_Device * device, const char * uri);
 oni_Status oni_setDepthColorSyncEnabled(oni_Device * device, bool isEnabled);
-oni_Status oni_setImageRegistrationMode(oni_Device * device, oni_ImageRegistrationMode mode);
-oni_Status oni_setProperty(oni_Device * device, int propId, const void * data, int dataSize);
-// TODO (maybe?): templatized oni_setProperty?
+oni_Status oni_setImageRegistrationMode(oni_Device * device,
+                                        oni_ImageRegistrationMode mode);
+oni_Status oni_setProperty(oni_Device * device, int propId, const void * data,
+                           int dataSize);
+// Missing from the above is conversions of the templated versions of
+// getProperty, invoke, and setProperty.
 
 // ==================
 // openni::DeviceInfo
@@ -85,23 +91,27 @@ const char * oni_getVendor(oni_DeviceInfo * info);
 // ==============
 // openni::OpenNI
 // ==============
-// All of the oni_addDevice...Listener functions take function pointers rather
-// than class instances.
-oni_Status oni_addDeviceConnectedListener(oni_DeviceConnectedListener fnPtr);
-oni_Status oni_addDeviceDisconnectedListener(oni_DeviceDisconnectedListener fnPtr);
-oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener fnPtr);
-// oni_enumerateDevices: You are responsible for the returned array.
+// Note on the oni_addDevice* functions:
+// To use these, create the respective structure and set its 'fnPtr' field to a
+// pointer to a listener function.  The call will modify the structure (it will
+// leave 'fnPtr' alone but will set '_obj') and in order to use any of the
+// oni_removeDevice* functions, you need to pass either the same structure, or
+// simply one that has '_obj' set to the same pointer.
+oni_Status oni_addDeviceConnectedListener(oni_DeviceConnectedListener * listen);
+oni_Status oni_addDeviceDisconnectedListener(oni_DeviceDisconnectedListener * listen);
+oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener * listen);
 int oni_enumerateDevicesCount();
-void oni_enumerateDevices(oni_DeviceInfo * out);
+// oni_enumerateDevices: 'out' should have enough space preallocated.  If
+// 'maxDevices' is set to a non-negative value, this limits how many elements
+// will be written.
+void oni_enumerateDevices(oni_DeviceInfo * out, int maxDevices);
 const char * oni_getExtendedError();
 oni_Version oni_getVersion();
 oni_Status oni_initialize();
-// The same thing applies to the oni_removeDevice functions as oni_addDevice
-//oni_Status oni_removeDeviceConnectedListener(oni_DeviceConnectedListener fnPtr);
-//oni_Status oni_removeDeviceDisconnectedListener(oni_DeviceDisconnectedListener fnPtr);
-//oni_Status oni_removeDeviceStateChangedListener(oni_DeviceStateChangedListener fnPtr);
-// TODO How would these work? The pointer to the class object would have to be
-// the same. This may necessitate a struct rather than a function pointer.
+// See the notes on oni_addDevice* functions.
+void oni_removeDeviceConnectedListener(oni_DeviceConnectedListener * listen);
+void oni_removeDeviceDisconnectedListener(oni_DeviceDisconnectedListener * listen);
+void oni_removeDeviceStateChangedListener(oni_DeviceStateChangedListener * listen);
 void oni_shutdown();
 
 // =======================
@@ -179,43 +189,55 @@ void oni_setResolution(oni_VideoMode * mode, int resX, int resY);
 // openni::VideoStream
 // ===================
 oni_VideoStream * oni_new_VideoStream();
-void oni_delete_VideoStream(oni_VideoStream * stream); 
-//oni_Status oni_addNewFrameListener(NewFrameListener *pListener); 
+void oni_delete_VideoStream(oni_VideoStream * stream);
+// oni_addNewFrameListener:  This uses the same conventions as the functions
+// for adding and removing listeners, e.g. oni_addDeviceConnectedListener.
+// Create the respective structure and set its 'fnPtr' field to a pointer to a
+// listener function.  The call will modify the structure (it will leave 'fnPtr'
+// alone but will set '_obj') and in order to use oni_removeNewFrameListener
+// you need to pass either the same structure, or simply one that has '_obj' set
+// to the same pointer.
+oni_Status oni_addNewFrameListener(oni_VideoStream * stream,
+                                   oni_NewFrameListener * listener); 
 oni_Status oni_create_VideoStream(oni_VideoStream * stream, oni_Device * device,
                                   oni_SensorType sensorType);
 void oni_destroy_VideoStream(oni_VideoStream * stream);
 // oni_getCameraSettings: You do not own the returned object.
 oni_CameraSettings * oni_getCameraSettings(oni_VideoStream * stream);
-bool oni_getCropping(oni_VideoStream * stream, int *pOriginX, int *pOriginY, int *pWidth, int *pHeight);
+bool oni_getCropping(oni_VideoStream * stream, int *pOriginX, int *pOriginY,
+                     int *pWidth, int *pHeight);
 float oni_getHorizontalFieldOfView(oni_VideoStream * stream);
 int oni_getMaxPixelValue(oni_VideoStream * stream);
 int oni_getMinPixelValue(oni_VideoStream * stream);
 bool oni_getMirroringEnabled(oni_VideoStream * stream);
 oni_Status oni_getProperty_VideoStream(oni_VideoStream * stream, int propertyId,
                                        void *data, int *dataSize);
-//template<class T> Status getProperty (int propertyId, T *value) const
 oni_SensorInfo * oni_getSensorInfo_VideoStream(oni_VideoStream * stream);
 float oni_getVerticalFieldOfView(oni_VideoStream * stream);
 // oni_getVideoMode_VideoStream: You must delete this object when done.
 oni_VideoMode * oni_getVideoMode_VideoStream(oni_VideoStream * stream);
-oni_Status oni_invoke_VideoStream(oni_VideoStream * stream, int commandId, void *data, int dataSize);
-//template<class T> Status invoke (int commandId, const T &value)
+oni_Status oni_invoke_VideoStream(oni_VideoStream * stream, int commandId,
+                                  void *data, int dataSize);
 bool oni_isCommandSupported_VideoStream(oni_VideoStream * stream, int commandId);
 bool oni_isCroppingSupported(oni_VideoStream * stream);
 bool oni_isPropertySupported_VideoStream(oni_VideoStream * stream, int propertyId);
 bool oni_isValid_VideoStream(oni_VideoStream * stream);
 oni_Status oni_readFrame(oni_VideoStream * stream, oni_VideoFrameRef *pFrame);
-//void oni_removeNewFrameListener(NewFrameListener *pListener)
+// oni_removeNewFrameListener: See notes on oni_addNewFrameListener.
+void oni_removeNewFrameListener(oni_VideoStream * stream,
+                                oni_NewFrameListener * listener);
 oni_Status oni_resetCropping(oni_VideoStream * stream);
-oni_Status oni_setCropping(oni_VideoStream * stream, int originX, int originY, int width, int height);
+oni_Status oni_setCropping(oni_VideoStream * stream, int originX, int originY,
+                           int width, int height);
 oni_Status oni_setMirroringEnabled(oni_VideoStream * stream, bool isEnabled);
 oni_Status oni_setProperty_VideoStream(oni_VideoStream * stream, int propertyId,
                                        const void *data, int dataSize);
-// template<class T > Status setProperty (int propertyId, const T &value)
 oni_Status oni_setVideoMode(oni_VideoStream * stream,
                             oni_VideoMode * videoMode);
 oni_Status oni_start_VideoStream(oni_VideoStream * stream);
 void oni_stop_VideoStream(oni_VideoStream * stream);
+// Missing from the above is templated versions of getProperty, invoke, and
+// setProperty.
 
 #ifdef __cplusplus
 } // extern "C"
