@@ -492,6 +492,38 @@ void oni_stop(oni_Recorder * recorder) {
     EXC_CHECK( recorder->stop(); );
 }
 
+// ==================
+// openni::SensorInfo
+// ==================
+oni_SensorType oni_getSensorType(oni_SensorInfo * info) {
+    EXC_CHECK( return info->getSensorType(); );
+}
+
+oni_VideoModeArray * oni_getSupportedVideoModes(oni_SensorInfo * info) {
+    EXC_CHECK({
+        const openni::Array<openni::VideoMode> & modes =
+            info->getSupportedVideoModes();
+        return (oni_VideoModeArray*) &modes;
+    });
+    return NULL;
+}
+
+// ========================
+// openni::Array<VideoMode>
+// ========================
+oni_VideoMode * oni_getElement_VideoModeArray(oni_VideoModeArray * array, int idx) {
+    EXC_CHECK({
+        const openni::VideoMode & mode = (*array)[idx];
+        return (oni_VideoMode*) &mode;
+    });
+    return NULL;
+}
+
+int oni_getSize_VideoModeArray(oni_VideoModeArray * array) {
+    EXC_CHECK( return array->getSize(); );
+    return -1;
+}
+
 // =====================
 // openni::VideoFrameRef
 // =====================

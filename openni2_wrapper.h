@@ -3,6 +3,15 @@
 // (c) Chris Hodapp, 2013
 // ============================================================================
 
+// Still remaining:
+// TODO Better error-handling
+// TODO Turn enumerateDevices into something that just wraps an Array rather
+// than converting it?
+// TODO Actually try out large parts of this code
+// TODO Check const-correctness (or at least shut the compiler up)
+// TODO Check for any functions that return a const reference in OpenNI2, and
+// make sure that I handle this reference as a pointer properly
+
 #ifndef OPENNI2_WRAPPER
 #define OPENNI2_WRAPPER
 
@@ -15,11 +24,10 @@ extern "C" {
 // =============
 // openni::Array
 // =============
-// Array is templated, oh joy...
 
-// ======================
-// openni::CameraSettings
-// ======================
+// ==============================================
+// openni::CameraSettings  ->  oni_CameraSettings
+// ==============================================
 bool oni_getAutoExposureEnabled(oni_CameraSettings * camera);
 bool oni_getAutoWhiteBalanceEnabled(oni_CameraSettings * camera);
 bool oni_CameraSettings_isValid(oni_CameraSettings * camera);
@@ -46,9 +54,9 @@ oni_Status oni_convertWorldToDepth2(
     oni_VideoStream * depth, float worldX, float worldY, float worldZ,
     float *pDepthX, float *pDepthY, float *pDepthZ);
 
-// ==============
-// openni::Device
-// ==============
+// ==============================
+// openni::Device  ->  oni_Device
+// ==============================
 oni_Device * oni_new_Device();
 void oni_delete_Device(oni_Device * device);
 void oni_close(oni_Device * device);
@@ -78,10 +86,10 @@ oni_Status oni_setProperty(oni_Device * device, int propId, const void * data,
 // Missing from the above is conversions of the templated versions of
 // getProperty, invoke, and setProperty.
 
-// ==================
-// openni::DeviceInfo
-// ==================
-// (You do not own any of the returned pointers)
+// ======================================
+// openni::DeviceInfo  ->  oni_DeviceInfo
+// ======================================
+// Note on oni_DeviceInfo: The caller does not own any of the returned pointers.
 const char * oni_getName(oni_DeviceInfo * info);
 const char * oni_getUri(oni_DeviceInfo * info);
 uint16_t oni_getUsbProductId(oni_DeviceInfo * info);
@@ -114,9 +122,9 @@ void oni_removeDeviceDisconnectedListener(oni_DeviceDisconnectedListener * liste
 void oni_removeDeviceStateChangedListener(oni_DeviceStateChangedListener * listen);
 void oni_shutdown();
 
-// =======================
-// openni::PlaybackControl
-// =======================
+// ================================================
+// openni::PlaybackControl  ->  oni_PlaybackControl
+// ================================================
 void oni_delete_PlaybackControl(oni_PlaybackControl * control);
 int oni_getNumberOfFrames(oni_PlaybackControl * control,
                           oni_VideoStream * stream);
@@ -128,9 +136,9 @@ oni_Status oni_seek(oni_PlaybackControl * control, oni_VideoStream * stream,
 oni_Status oni_setRepeatEnabled(oni_PlaybackControl * control, bool repeat);
 oni_Status oni_setSpeed(oni_PlaybackControl * control, float speed);
 
-// ================
-// openni::Recorder
-// ================
+// ==================================
+// openni::Recorder  ->  oni_Recorder
+// ==================================
 oni_Recorder * oni_new_Recorder();
 void oni_delete_Recorder(oni_Recorder * recorder);
 oni_Status oni_attach(oni_Recorder * recorder, oni_VideoStream * stream,
@@ -141,15 +149,24 @@ bool oni_isValid_Recorder(oni_Recorder * recorder);
 oni_Status oni_start(oni_Recorder * recorder);
 void oni_stop(oni_Recorder * recorder);
 
-// ==================
-// openni::SensorInfo
-// ==================
-oni_SensorType oni_getSensorType();
-// Array<VideoMode> getSupportedVideoModes(); ?
+// ======================================
+// openni::SensorInfo  ->  oni_SensorInfo
+// ======================================
+oni_SensorType oni_getSensorType(oni_SensorInfo * info);
+oni_VideoModeArray * oni_getSupportedVideoModes(oni_SensorInfo * info);
+// Yes, it's clunky to return an oni_VideoModeArray, but it may be easier than
+// making it an array where the user is required to manage every element.
 
-// =====================
-// openni::VideoFrameRef
-// =====================
+// ================================================
+// openni::Array<VideoMode>  ->  oni_VideoModeArray
+// ================================================
+// oni_getElement_VideoModeArray: Do not modify returned elements.
+oni_VideoMode * oni_getElement_VideoModeArray(oni_VideoModeArray * array, int idx);
+int oni_getSize_VideoModeArray(oni_VideoModeArray * array);
+
+// ============================================
+// openni::VideoFrameRef  ->  oni_VideoFrameRef
+// ============================================
 // oni_new_VideoFrameRef: 'other' can be NULL for default constructor.
 oni_VideoFrameRef * oni_new_VideoFrameRef(oni_VideoFrameRef * other);
 void oni_delete_VideoFrameRef(oni_VideoFrameRef * ref);
@@ -170,9 +187,9 @@ int oni_getWidth(oni_VideoFrameRef * ref);
 bool oni_isValid_VideoFrameRef(oni_VideoFrameRef * ref);
 void oni_release_VideoFrameRef(oni_VideoFrameRef * ref);
 
-// =================
-// openni::VideoMode
-// =================
+// ====================================
+// openni::VideoMode  ->  oni_VideoMode
+// ====================================
 // oni_new_VideoMode: 'other' can be NULL for default constructor.
 oni_VideoMode * oni_new_VideoMode(oni_VideoMode * other);
 oni_VideoMode * oni_copy_VideoMode(oni_VideoMode * mode,
@@ -185,9 +202,9 @@ void oni_setFps(oni_VideoMode * mode, int fps);
 void oni_setPixelFormat(oni_VideoMode * mode, oni_PixelFormat format);
 void oni_setResolution(oni_VideoMode * mode, int resX, int resY);
 
-// ===================
-// openni::VideoStream
-// ===================
+// ========================================
+// openni::VideoStream  ->  oni_VideoStream
+// ========================================
 oni_VideoStream * oni_new_VideoStream();
 void oni_delete_VideoStream(oni_VideoStream * stream);
 // oni_addNewFrameListener:  This uses the same conventions as the functions
