@@ -1,7 +1,7 @@
 OpenNI2_Wrapper
 ===============
 
-This - so far - is a C interface to the OpenNI2 libraries (also on github as https://github.com/OpenNI/OpenNI2).  It targets versions 2.1 and 2.2; the interface on 2.0 seems to differ.  This should also be usable via clean C as well (i.e. if you are building C code with a C++ compiler).
+This - so far - is a C interface to the OpenNI2 libraries (also on github as https://github.com/OpenNI/OpenNI2).  It targets versions 2.1.  This should also be usable via clean C as well (i.e. if you are building C code with a C++ compiler).
 
 Usage & documentation notes:
 * openni2_wrapper.h contains all function prototypes of interest.
@@ -17,11 +17,11 @@ Every function name, type name, and constant name should match the naming in Ope
 * enums are wrapped as extern ints.
 
 As far as unfinished parts go, I still have on my TODO list:
-* Better error-handling.
-* Testing of everything.
-* Check const-correctness (or at least shut the compiler up).
-* Check for any functions that return a const reference in OpenNI2, and make sure that I handle this reference as a pointer properly.
-
-Some of the memory-management details are ambiguous because the OpenNI2 docs say very little on the matter.  You have been warned.
+* Making this compatible with version 2.2 of OpenNI.
+* Better error-handling.  The OpenNI2 documentation has little to say on this matter.
+* More complete testing of everything.
+* Building on a configuration besides GCC & Linux.
+* Checking const-correctness (or at least shut the compiler up).
+* Checking memory-management the best I can given the sparse documentation on the matter.
 
 The repository was copied over from another larger project that had some other goals in mind, so some of the history might be odd, at least until I clean parts of it up.

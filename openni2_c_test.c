@@ -22,6 +22,10 @@ int main(int argc, const char ** argv) {
     oni_DeviceDisconnectedListener listen2;
     oni_DeviceStateChangedListener listen3;
 
+    oni_Version ver = oni_getVersion();
+    printf("OpenNI2 build %d, maintenance %d, v%d.%d\n", ver.build,
+           ver.maintenance, ver.major, ver.minor);
+
     listen1.fnPtr = &deviceConnect;
     listen2.fnPtr = &deviceDisconnect;
     listen3.fnPtr = &deviceStateChange;
