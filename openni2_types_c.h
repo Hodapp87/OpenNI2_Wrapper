@@ -15,12 +15,13 @@
 // ==================================================================
 // Forward Declarations (for opaque pointers that map to C++ classes)
 // ==================================================================
+typedef struct oni_DeviceInfoArray oni_DeviceInfoArray;
+typedef struct oni_VideoModeArray oni_VideoModeArray;
 typedef struct oni_CameraSettings oni_CameraSettings;
 typedef struct oni_Device oni_Device;
 typedef struct oni_PlaybackControl oni_PlaybackControl;
 typedef struct oni_Recorder oni_Recorder;
 typedef struct oni_SensorInfo oni_SensorInfo;
-typedef struct oni_VideoModeArray oni_VideoModeArray;
 typedef struct oni_VideoFrameRef oni_VideoFrameRef;
 typedef struct oni_VideoMode oni_VideoMode;
 typedef struct oni_VideoStream oni_VideoStream;

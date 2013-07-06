@@ -5,14 +5,18 @@
 #include "openni2_c.h"
 
 void listDevices();
+char * getFirstUri();
 void echoDeviceInfo(oni_DeviceInfo info);
 void deviceConnect(oni_DeviceInfo * info);
 void deviceDisconnect(oni_DeviceInfo * info);
 void deviceStateChange(oni_DeviceInfo * info, oni_DeviceState state);
+void echoSensorInfo(const oni_SensorInfo * info);
 
 int main(int argc, const char ** argv) {
     int rc;
 
+    char * uri = NULL;
+    oni_Device * device = NULL;
 
     oni_DeviceConnectedListener listen1;
     oni_DeviceDisconnectedListener listen2;
@@ -28,58 +32,88 @@ int main(int argc, const char ** argv) {
 
     if (rc == oni_STATUS_OK) {
         rc = oni_addDeviceConnectedListener(&listen1);
-        printf("rc=%d\n", rc);
         rc = oni_addDeviceDisconnectedListener(&listen2);
-        printf("rc=%d\n", rc);
         rc = oni_addDeviceStateChangedListener(&listen3);
-        printf("rc=%d\n", rc);
 
         listDevices();
 
-        while (1) {
-            usleep(500000);
-            listDevices();
+        uri = getFirstUri();
+    }
+
+    if (uri != NULL) {
+        printf("Using URI: %s\n", uri);
+        device = oni_new_Device();
+    } else {
+        printf("Unable to find device!\n");
+    }
+
+    if (device != NULL) {
+        rc = oni_open(device, uri);
+        printf("oni_open: rc=%s\n", oni_getString_Status(rc));
+
+        printf("Device is %s\n", oni_isValid_Device(device) ? "valid" : "invalid");
+
+        printf("Registration mode: %s\n", oni_getString_ImageRegistrationMode(
+                   oni_getImageRegistrationMode(device)));
+
+        {
+            int i;
+            bool hasSensor;
+            oni_SensorType types[] = { oni_SENSOR_IR, oni_SENSOR_COLOR, oni_SENSOR_DEPTH };
+
+            for (i = 0; i < 3; ++i) {
+
+                hasSensor = oni_hasSensor(device, types[i]);
+
+                if (hasSensor) {
+                    const oni_SensorInfo * info = oni_getSensorInfo(device, types[i]);
+                    if (info == NULL) {
+                        printf("Present, but can't get info\n");
+                    } else {
+                        echoSensorInfo(info);
+                    }
+                } else {
+                    const char * sensorName = oni_getString_SensorType(types[i]);
+                    printf("Sensor type %s: Not present", sensorName);
+                }
+            }
         }
-        /*
-        oni_Device * device = oni_new_Device();
-
-        if (device == NULL) {
-            printf("Cannot get device!\n");
-            return 1;
-
-        } else {
-
-            int status = oni_open(device, NULL);
-            printf("Open status: %d\n", status);
-
-            oni_DeviceInfo info = oni_getDeviceInfo(device);
-
-            //printf("oni_IMAGE_REGISTRATION_OFF = %d\n", oni_IMAGE_REGISTRATION_OFF);
-            //printf("oni_IMAGE_REGISTRATION_DEPTH_TO_COLOR = %d\n", oni_IMAGE_REGISTRATION_DEPTH_TO_COLOR);
-
-            oni_delete_Device(device);
-
-            return 0;
-            }*/
+        
+        oni_close(device);
     }
 }
 
 // listDevices: Echo a list of devices to stdout.
 void listDevices() {
-    int deviceCount;
-    oni_DeviceInfo * devices = NULL;
     int i;
 
-    deviceCount = oni_enumerateDevicesCount();
-    devices = (oni_DeviceInfo *) malloc(deviceCount * sizeof(oni_DeviceInfo));
-    oni_enumerateDevices(devices, deviceCount);
+    oni_DeviceInfoArray * devices = oni_enumerateDevices();
+    int deviceCount = oni_getSize_DeviceInfoArray(devices);
     printf("OpenNI reported %d devices\n", deviceCount);
 
     for (i = 0; i < deviceCount; ++i) {
+        oni_DeviceInfo info;
         printf("Device %d:\n", i);
-        echoDeviceInfo(devices[i]);
+
+        info = oni_getElement_DeviceInfoArray(devices, i);
+        echoDeviceInfo(info);
     }
     free(devices);
+}
+
+// getFirstUri: Get the URI of what looks like a valid device, or return NULL.
+char * getFirstUri() {
+    char * uri = NULL;
+
+    oni_DeviceInfoArray * devices = oni_enumerateDevices();
+    int deviceCount = oni_getSize_DeviceInfoArray(devices);
+    if (deviceCount > 0) {
+        oni_DeviceInfo info;
+        info = oni_getElement_DeviceInfoArray(devices, 0);
+        uri = (char*) info.uri;
+    }
+
+    return uri;
 }
 
 void echoDeviceInfo(oni_DeviceInfo info) {
@@ -105,4 +139,24 @@ void deviceStateChange(oni_DeviceInfo * info, oni_DeviceState state) {
     printf("Device state change:\n");
     echoDeviceInfo(*info);
     printf("New device state: %d\n", state);
+}
+
+void echoSensorInfo(const oni_SensorInfo * info) {
+    const char * sensorName = oni_getString_SensorType(oni_getSensorType(info));
+    oni_VideoModeArray * modes = oni_getSupportedVideoModes(info);
+    int modeCount = oni_getSize_VideoModeArray(modes);
+
+    printf("Sensor type %s:\n", sensorName);
+    if (modes == NULL) {
+        printf("\tUnable to get list of video modes!\n");
+    } else {
+        int i;
+        for (i = 0; i < modeCount; ++i) {
+            oni_VideoMode * mode = oni_getElement_VideoModeArray(modes, i);
+            printf("  FPS: %d; ", oni_getFps(mode));
+            printf("PixelFormat: %s; ", oni_getString_PixelFormat(oni_getPixelFormat(mode)));
+            printf("resolution X & Y: %dx%d\n", oni_getResolutionX(mode),
+                   oni_getResolutionY(mode));
+        }
+    }
 }

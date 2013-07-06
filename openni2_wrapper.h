@@ -21,9 +21,20 @@
 extern "C" {
 #endif
 
-// =============
-// openni::Array
-// =============
+// ==================================================
+// openni::Array<DeviceInfo>  ->  oni_DeviceInfoArray
+// ==================================================
+void oni_delete_DeviceInfoArray(oni_DeviceInfoArray * array);
+// oni_getElement_DeviceInfoArray: Do not modify returned elements.
+oni_DeviceInfo oni_getElement_DeviceInfoArray(oni_DeviceInfoArray * array, int idx);
+int oni_getSize_DeviceInfoArray(oni_DeviceInfoArray * array);
+
+// ================================================
+// openni::Array<VideoMode>  ->  oni_VideoModeArray
+// ================================================
+// oni_getElement_VideoModeArray: Do not modify returned elements.
+oni_VideoMode * oni_getElement_VideoModeArray(oni_VideoModeArray * array, int idx);
+int oni_getSize_VideoModeArray(oni_VideoModeArray * array);
 
 // ==============================================
 // openni::CameraSettings  ->  oni_CameraSettings
@@ -64,8 +75,8 @@ void oni_close(oni_Device * device);
 oni_DeviceInfo oni_getDeviceInfo(oni_Device * device);
 oni_ImageRegistrationMode oni_getImageRegistrationMode(oni_Device * device);
 oni_PlaybackControl * oni_getPlaybackControl(oni_Device * device);
-oni_Status oni_getProperty(oni_Device * device, int propertyId, void * data,
-                           int * dataSize);
+oni_Status oni_getProperty_Device(oni_Device * device, int propertyId,
+                                  void * data, int * dataSize);
 const oni_SensorInfo * oni_getSensorInfo(oni_Device * device,
                                          oni_SensorType sensorType);
 bool oni_hasSensor(oni_Device * device, oni_SensorType sensorType);
@@ -76,25 +87,37 @@ bool oni_isFile(oni_Device * device);
 bool oni_isImageRegistrationModeSupported(oni_Device * device,
                                           oni_ImageRegistrationMode mode);
 bool oni_isPropertySupported(oni_Device * device, int propertyId);
-bool oni_Device_isValid(oni_Device * device);
+bool oni_isValid_Device(oni_Device * device);
 oni_Status oni_open(oni_Device * device, const char * uri);
 oni_Status oni_setDepthColorSyncEnabled(oni_Device * device, bool isEnabled);
 oni_Status oni_setImageRegistrationMode(oni_Device * device,
                                         oni_ImageRegistrationMode mode);
-oni_Status oni_setProperty(oni_Device * device, int propId, const void * data,
-                           int dataSize);
+oni_Status oni_setProperty_Device(oni_Device * device, int propId,
+                                  const void * data, int dataSize);
 // Missing from the above is conversions of the templated versions of
 // getProperty, invoke, and setProperty.
+
+// ===========================
+// Utility functions for enums
+// ===========================
+// All getString functions: Turn given enum value into a string, e.g. STATUS_OK.
+const char * oni_getString_DeviceState(oni_DeviceState state);
+const char * oni_getString_ImageRegistrationMode(oni_ImageRegistrationMode state);
+const char * oni_getString_SensorType(oni_SensorType state);
+const char * oni_getString_PixelFormat(oni_PixelFormat state);
+const char * oni_getString_Status(oni_Status state);
 
 // ======================================
 // openni::DeviceInfo  ->  oni_DeviceInfo
 // ======================================
 // Note on oni_DeviceInfo: The caller does not own any of the returned pointers.
+/*
 const char * oni_getName(oni_DeviceInfo * info);
 const char * oni_getUri(oni_DeviceInfo * info);
 uint16_t oni_getUsbProductId(oni_DeviceInfo * info);
 uint16_t oni_getUsbVendorId(oni_DeviceInfo * info);
 const char * oni_getVendor(oni_DeviceInfo * info);
+*/
 
 // ==============
 // openni::OpenNI
@@ -108,11 +131,8 @@ const char * oni_getVendor(oni_DeviceInfo * info);
 oni_Status oni_addDeviceConnectedListener(oni_DeviceConnectedListener * listen);
 oni_Status oni_addDeviceDisconnectedListener(oni_DeviceDisconnectedListener * listen);
 oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener * listen);
-int oni_enumerateDevicesCount();
-// oni_enumerateDevices: 'out' should have enough space preallocated.  If
-// 'maxDevices' is set to a non-negative value, this limits how many elements
-// will be written.
-void oni_enumerateDevices(oni_DeviceInfo * out, int maxDevices);
+// oni_enumerateDevices: You are responsible for deleting the returned array.
+oni_DeviceInfoArray * oni_enumerateDevices();
 const char * oni_getExtendedError();
 oni_Version oni_getVersion();
 oni_Status oni_initialize();
@@ -152,17 +172,10 @@ void oni_stop(oni_Recorder * recorder);
 // ======================================
 // openni::SensorInfo  ->  oni_SensorInfo
 // ======================================
-oni_SensorType oni_getSensorType(oni_SensorInfo * info);
-oni_VideoModeArray * oni_getSupportedVideoModes(oni_SensorInfo * info);
+oni_SensorType oni_getSensorType(const oni_SensorInfo * info);
+oni_VideoModeArray * oni_getSupportedVideoModes(const oni_SensorInfo * info);
 // Yes, it's clunky to return an oni_VideoModeArray, but it may be easier than
 // making it an array where the user is required to manage every element.
-
-// ================================================
-// openni::Array<VideoMode>  ->  oni_VideoModeArray
-// ================================================
-// oni_getElement_VideoModeArray: Do not modify returned elements.
-oni_VideoMode * oni_getElement_VideoModeArray(oni_VideoModeArray * array, int idx);
-int oni_getSize_VideoModeArray(oni_VideoModeArray * array);
 
 // ============================================
 // openni::VideoFrameRef  ->  oni_VideoFrameRef

@@ -69,6 +69,45 @@ void _convertDeviceInfo(const openni::DeviceInfo & devInfo,
     out->vendor = devInfo.getVendor();
 }
 
+// =========================
+// openni::Array<DeviceInfo>
+// =========================
+void oni_delete_DeviceInfoArray(oni_DeviceInfoArray * array) {
+    EXC_CHECK( delete array; );
+}
+
+oni_DeviceInfo oni_getElement_DeviceInfoArray(oni_DeviceInfoArray * array, int idx) {
+    oni_DeviceInfo info;
+    info.uri = NULL;
+    info.name = NULL;
+    info.usbProductId = 0;
+    info.usbVendorId = 0;
+    info.vendor = NULL;
+    EXC_CHECK( _convertDeviceInfo((*array)[idx], &info); );
+    return info;
+}
+
+int oni_getSize_DeviceInfoArray(oni_DeviceInfoArray * array) {
+    EXC_CHECK( return array->getSize(); );
+    return -1;
+}
+
+// ========================
+// openni::Array<VideoMode>
+// ========================
+oni_VideoMode * oni_getElement_VideoModeArray(oni_VideoModeArray * array, int idx) {
+    EXC_CHECK({
+        const openni::VideoMode & mode = (*array)[idx];
+        return (oni_VideoMode*) &mode;
+    });
+    return NULL;
+}
+
+int oni_getSize_VideoModeArray(oni_VideoModeArray * array) {
+    EXC_CHECK( return array->getSize(); );
+    return -1;
+}
+
 // ======================
 // openni::CameraSettings
 // ======================
@@ -191,7 +230,8 @@ oni_PlaybackControl * oni_getPlaybackControl(oni_Device * device) {
     return NULL;
 }
 
-oni_Status oni_getProperty(oni_Device * device, int propertyId, void * data, int * dataSize) {
+oni_Status oni_getProperty_Device(oni_Device * device, int propertyId,
+                                  void * data, int * dataSize) {
     EXC_CHECK( return device->getProperty(propertyId, data, dataSize); )
     return openni::STATUS_ERROR;
 }
@@ -231,7 +271,7 @@ bool oni_isPropertySupported(oni_Device * device, int propertyId) {
     return false;
 }
 
-bool oni_Device_isValid(oni_Device * device) {
+bool oni_isValid_Device(oni_Device * device) {
     EXC_CHECK( return device->isValid(); );
     return false;
 }
@@ -251,9 +291,70 @@ oni_Status oni_setImageRegistrationMode(oni_Device * device, oni_ImageRegistrati
     return openni::STATUS_ERROR;
 }
 
-oni_Status oni_setProperty(oni_Device * device, int propId, const void * data, int dataSize) {
+oni_Status oni_setProperty_Device(oni_Device * device, int propId,
+                                  const void * data, int dataSize) {
     EXC_CHECK( return device->setProperty(propId, data, dataSize); );
     return openni::STATUS_ERROR;
+}
+
+// ===========================
+// Utility functions for enums
+// ===========================
+const char * oni_getString_DeviceState(oni_DeviceState state) {
+    switch (state) {
+    case openni::DEVICE_STATE_OK: return "DEVICE_STATE_OK";
+	case openni::DEVICE_STATE_ERROR: return "DEVICE_STATE_ERROR";
+	case openni::DEVICE_STATE_NOT_READY: return "DEVICE_STATE_NOT_READY";
+	case openni::DEVICE_STATE_EOF: return "DEVICE_STATE_EOF";
+    default: return "Unknown DeviceState";
+    }
+}
+
+const char * oni_getString_ImageRegistrationMode(oni_ImageRegistrationMode mode) {
+    switch (mode) {
+    case openni::IMAGE_REGISTRATION_OFF: return "IMAGE_REGISTRATION_OFF";
+    case openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR:
+        return "IMAGE_REGISTRATION_DEPTH_TO_COLOR";
+    default: return "Unknown ImageRegistrationMode";
+    }
+}
+
+const char * oni_getString_SensorType(oni_SensorType type_) {
+    switch (type_) {
+    case openni::SENSOR_IR: return "SENSOR_IR";
+    case openni::SENSOR_COLOR: return "SENSOR_COLOR";
+    case openni::SENSOR_DEPTH: return "SENSOR_DEPTH";
+    default: return "Unknown SensorType";
+    }
+}
+
+const char * oni_getString_PixelFormat(oni_PixelFormat fmt) {
+    switch (fmt) {
+	case openni::PIXEL_FORMAT_DEPTH_1_MM: return "PIXEL_FORMAT_DEPTH_1_MM";
+	case openni::PIXEL_FORMAT_DEPTH_100_UM: return "PIXEL_FORMAT_DEPTH_100_UM";
+	case openni::PIXEL_FORMAT_SHIFT_9_2: return "PIXEL_FORMAT_SHIFT_9_2";
+	case openni::PIXEL_FORMAT_SHIFT_9_3: return "PIXEL_FORMAT_SHIFT_9_3";
+	case openni::PIXEL_FORMAT_RGB888: return "PIXEL_FORMAT_RGB888";
+	case openni::PIXEL_FORMAT_YUV422: return "PIXEL_FORMAT_YUV422";
+	case openni::PIXEL_FORMAT_GRAY8: return "PIXEL_FORMAT_GRAY8";
+	case openni::PIXEL_FORMAT_GRAY16: return "PIXEL_FORMAT_GRAY16";
+	case openni::PIXEL_FORMAT_JPEG: return "PIXEL_FORMAT_JPEG";
+    default: return "Unknown PixelFormat";
+    }
+}
+
+const char * oni_getString_Status(oni_Status status) {
+    switch (status) {
+    case openni::STATUS_OK: return "STATUS_OK";
+    case openni::STATUS_ERROR: return "STATUS_ERROR";
+    case openni::STATUS_NOT_IMPLEMENTED: return "STATUS_NOT_IMPLEMENTED";
+    case openni::STATUS_NOT_SUPPORTED: return "STATUS_NOT_SUPPORTED";
+    case openni::STATUS_BAD_PARAMETER: return "STATUS_BAD_PARAMETER";
+    case openni::STATUS_OUT_OF_FLOW: return "STATUS_OUT_OF_FLOW";
+    case openni::STATUS_NO_DEVICE: return "STATUS_NO_DEVICE";
+    case openni::STATUS_TIME_OUT: return "STATUS_TIME_OUT";
+    default: return "Unknown Status";
+    }
 }
 
 // ==========================================
@@ -341,12 +442,15 @@ oni_Status oni_addDeviceStateChangedListener(oni_DeviceStateChangedListener * li
     return rc;
 }
 
-void oni_enumerateDevices(oni_DeviceInfo * out, int maxDevices) {
+oni_DeviceInfoArray * oni_enumerateDevices() {
     EXC_CHECK({
-        openni::Array<openni::DeviceInfo> devices;
- 
-        openni::OpenNI::enumerateDevices(&devices);
+        openni::Array<openni::DeviceInfo> * devices =
+            new openni::Array<openni::DeviceInfo>();
+        openni::OpenNI::enumerateDevices(devices);
 
+        return devices;
+
+/*
         int count = devices.getSize();
         if (count > maxDevices && maxDevices >= 0) {
             count = maxDevices;
@@ -355,19 +459,8 @@ void oni_enumerateDevices(oni_DeviceInfo * out, int maxDevices) {
         for (int i = 0; i < count; ++i) {
             _convertDeviceInfo(devices[i], out + i);
         }
+*/
     });
-}
-
-int oni_enumerateDevicesCount() {
-    int count = -1;
-    EXC_CHECK({
-        openni::Array<openni::DeviceInfo> devices;
- 
-        openni::OpenNI::enumerateDevices(&devices);
-
-        count = devices.getSize();
-    });
-    return count;
 }
 
 const char * oni_getExtendedError() {
@@ -495,33 +588,17 @@ void oni_stop(oni_Recorder * recorder) {
 // ==================
 // openni::SensorInfo
 // ==================
-oni_SensorType oni_getSensorType(oni_SensorInfo * info) {
+oni_SensorType oni_getSensorType(const oni_SensorInfo * info) {
     EXC_CHECK( return info->getSensorType(); );
 }
 
-oni_VideoModeArray * oni_getSupportedVideoModes(oni_SensorInfo * info) {
+oni_VideoModeArray * oni_getSupportedVideoModes(const oni_SensorInfo * info) {
     EXC_CHECK({
         const openni::Array<openni::VideoMode> & modes =
             info->getSupportedVideoModes();
         return (oni_VideoModeArray*) &modes;
     });
     return NULL;
-}
-
-// ========================
-// openni::Array<VideoMode>
-// ========================
-oni_VideoMode * oni_getElement_VideoModeArray(oni_VideoModeArray * array, int idx) {
-    EXC_CHECK({
-        const openni::VideoMode & mode = (*array)[idx];
-        return (oni_VideoMode*) &mode;
-    });
-    return NULL;
-}
-
-int oni_getSize_VideoModeArray(oni_VideoModeArray * array) {
-    EXC_CHECK( return array->getSize(); );
-    return -1;
 }
 
 // =====================

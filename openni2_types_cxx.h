@@ -18,12 +18,13 @@
 // ==================================================================
 // Typedefs for C++ classes treated as opaque pointers in C interface
 // ==================================================================
+typedef openni::Array<openni::VideoMode> oni_VideoModeArray;
+typedef openni::Array<openni::DeviceInfo> oni_DeviceInfoArray;
 typedef openni::CameraSettings oni_CameraSettings;
 typedef openni::Device oni_Device;
 typedef openni::PlaybackControl oni_PlaybackControl;
 typedef openni::Recorder oni_Recorder;
 typedef openni::SensorInfo oni_SensorInfo;
-typedef openni::Array<openni::VideoMode> oni_VideoModeArray;
 typedef openni::VideoMode oni_VideoMode;
 typedef openni::VideoFrameRef oni_VideoFrameRef;
 typedef openni::VideoStream oni_VideoStream;
