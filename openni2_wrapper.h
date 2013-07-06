@@ -3,15 +3,6 @@
 // (c) Chris Hodapp, 2013
 // ============================================================================
 
-// Still remaining:
-// TODO Better error-handling
-// TODO Turn enumerateDevices into something that just wraps an Array rather
-// than converting it?
-// TODO Actually try out large parts of this code
-// TODO Check const-correctness (or at least shut the compiler up)
-// TODO Check for any functions that return a const reference in OpenNI2, and
-// make sure that I handle this reference as a pointer properly
-
 #ifndef OPENNI2_WRAPPER
 #define OPENNI2_WRAPPER
 
