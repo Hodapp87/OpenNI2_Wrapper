@@ -15,4 +15,5 @@ find_library(OPENNI2_LIBRARY
              PATH_SUFFIXES lib Lib Lib64)
 
 include_directories(SYSTEM ${OPENNI2_INCLUDE_DIR})
+target_link_libraries(openni2_c_wrapper ${OPENNI2_LIBRARY})
 target_link_libraries(openni2_c_wrapper_test openni2_c_wrapper ${OPENNI2_LIBRARY})

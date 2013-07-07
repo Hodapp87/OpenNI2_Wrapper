@@ -1,7 +1,9 @@
 OpenNI2_Wrapper
 ===============
 
-This - so far - is a C interface to the OpenNI2 libraries (also on github as https://github.com/OpenNI/OpenNI2).  It targets versions 2.1.  This should also be usable via clean C as well (i.e. if you are building C code with a C++ compiler).
+This is a C interface to the OpenNI2 libraries (also on github as https://github.com/OpenNI/OpenNI2).  It targets versions 2.1.  This should also be usable via clean C as well (i.e. if you are building C code with a C++ compiler).
+
+This also includes Python wrappers of that same interface, based on cffi (https://pypi.python.org/pypi/cffi).  This is still even more of a work-in-progress than the C wrappers.  Look in openni2_cffi.py.
 
 Usage & documentation notes:
 * openni2_wrapper.h contains all function prototypes of interest.
@@ -23,5 +25,7 @@ As far as unfinished parts go, I still have on my TODO list:
 * Building on a configuration besides GCC & Linux.
 * Checking const-correctness (or at least shut the compiler up).
 * Checking memory-management the best I can given the sparse documentation on the matter.
+* Something in the CMake build to pass along the locations of the libraries and headers to the Python code, which needs both for CFFI.  Presently they are hard-coded.
+* Wrap some actual classes in Python that mimic the interface.  (Does it seem silly to make the C wrapper to undo the class-based interface, and then rebuild it as a class-based interface in Python?  Whatever.)
 
 The repository was copied over from another larger project that had some other goals in mind, so some of the history might be odd, at least until I clean parts of it up.
