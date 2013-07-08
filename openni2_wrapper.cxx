@@ -14,7 +14,7 @@
 // EXC_CHECK(block): Wrap the block or statement in an exception check, e.g.
 //     EXC_CHECK( delete ptr; )
 // This being a C wrapper, none of the functions may throw exceptions, so it is
-// wise to use this anyplace a conception could conceivably occur.
+// wise to use this anyplace an exception could conceivably occur.
 #define EXC_CHECK(block) \
     try { \
         block \
