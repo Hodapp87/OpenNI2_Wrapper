@@ -87,23 +87,78 @@ print("v%d.%d, build %d maintenance %d" % (ver.major, ver.minor, ver.build, ver.
 rc = OpenNI2.initialize()
 print("Init OpenNI2: %s" % (ffi.string(lib.oni_getString_Status(rc))))
 
-files = ["openni2_types_python.h", "openni2_types_c.h", "openni2_types.h", "openni2_wrapper.h"]
-allHeaders = loadHeaders(files)
-parser = pycparser.c_parser.CParser()
-ast = parser.parse(allHeaders, filename='<none>')
-for ext in ast.ext:
-    if (type(ext.type) != pycparser.c_ast.FuncDecl): continue
-    name = ext.name
-    print("name: %s" % name)
-    if (ext.type.args != None):
-        for arg in ext.type.args.params:
-            print("  arg: %s" % arg.name)
-            argtype = arg.type
-            if (type(argtype) == pycparser.c_ast.PtrDecl):
-                print("    pointer to: ")
-                argtype.type.show()
+class WalkAST(object):
+    def __init__(self, files, prefix, classNames):
+        self.files = files
+        self.allHeaders = loadHeaders(files)
+        self.prefix = prefix
+        self.classNames = classNames
+        self.parser = pycparser.c_parser.CParser()
+        self.ast = self.parser.parse(self.allHeaders, filename='<none>')
+    def resolvePtr(self, decl):
+        if type(decl) == pycparser.c_ast.PtrDecl:
+            return "*" + self.resolvePtr(decl.type)
+        elif type(decl) == pycparser.c_ast.TypeDecl:
+            return self.resolvePtr(decl.type)
+        elif type(decl) == pycparser.c_ast.IdentifierType:
+            if len(decl.names) != 1:
+                raise Exception("Expected only one name for type!")
+            return "%s" % (decl.names[0],)
+        else:
+            print("Unknown type:")
+            decl.show()
+    def genFunction(self):
+        for ext in self.ast.ext:
+            fn = CFunction()
+            if (type(ext.type) != pycparser.c_ast.FuncDecl): continue
+            fnType = ext.type
+            fn.name = ext.name
+            fn.returnType = self.resolvePtr(fnType.type.type)
+            #print("  returns: %s" % self.resolvePtr(returnTypes))
+            fn.argNames = []
+            fn.argTypes = []
+            if (fnType.args != None):
+                for arg in fnType.args.params:
+                    fn.argNames.append(arg.name)
+                    fn.argTypes.append(self.resolvePtr(arg.type))
+            yield fn
+    def walk(self):
+        for fn in self.genFunction():
+            if not fn.name.startswith(self.prefix):
+                continue
+            newName = fn.name[len(self.prefix):]
+            target = []
+            #if newName.startswith("new"):
+            #    good = True
+            #if newName.startswith("delete"):
+            #    good = True
+            # First check is by function suffix.
+            for class_ in self.classNames:
+                suffix = "_" + class_
+                if newName.endswith(suffix):
+                    newName = fn.name[:-len(suffix)]
+                    print(" * match %s by function suffix" % (fn.name,))
+                    target.append(class_)
+                    good = True
+                    break
+            # Next check is by first argument.
+            if len(fn.argNames) > 0:
+                target.append(fn.argTypes[0])
+            if len(target) == 0:
+                print(" - unknown function %s" % (newName,))
+                parts = newName.split("_")
+                if len(parts) > 1:
+                    print(" - possible targets - %s?" % (parts[1:],))
             else:
-                print("    %s" % argtype.type.names)
-                #argtype.show()
-            #arg.show()
-    #ext.show()
+                print("Found function %s for %s" % (newName, target))
+
+class CFunction(object):
+    def __init__(self):
+        self.name = None
+        self.argNames = None
+        self.argTypes = None
+        self.returnType = None
+
+files = ["openni2_types_python.h", "openni2_types_c.h", "openni2_types.h", "openni2_wrapper.h"]
+walk = WalkAST(files, "oni_", ["DeviceInfoArray", "VideoStream", "Device", "VideoModeArray", "Recorder", "VideoMode", "VideoFrameRef", "DeviceState", "ImageRegistrationMode", "SensorType", "PixelFormat", "Status", "PlaybackControl", "CameraSettings"])
+walk.walk()

@@ -121,7 +121,7 @@ bool oni_getAutoWhiteBalanceEnabled(oni_CameraSettings * camera) {
     return false;
 }
 
-bool oni_CameraSettings_isValid(oni_CameraSettings * camera) {
+bool oni_isValid_CameraSettings(oni_CameraSettings * camera) {
     EXC_CHECK( return camera->isValid(); );
     return false;
 }

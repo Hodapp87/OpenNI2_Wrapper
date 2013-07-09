@@ -32,7 +32,7 @@ int oni_getSize_VideoModeArray(oni_VideoModeArray * array);
 // ==============================================
 bool oni_getAutoExposureEnabled(oni_CameraSettings * camera);
 bool oni_getAutoWhiteBalanceEnabled(oni_CameraSettings * camera);
-bool oni_CameraSettings_isValid(oni_CameraSettings * camera);
+bool oni_isValid_CameraSettings(oni_CameraSettings * camera);
 oni_Status oni_setAutoExposureEnabled(oni_CameraSettings * camera, bool enabled);
 oni_Status oni_setAutoWhiteBalanceEnabled(oni_CameraSettings * camera,
                                           bool enabled);

@@ -14,6 +14,13 @@ find_library(OPENNI2_LIBRARY
              HINTS /usr/lib /usr/local/lib
              PATH_SUFFIXES lib Lib Lib64)
 
+# We output some paths here for the Python:
+set(PYTHON_GENERATED "openni2_paths.py")
+file(WRITE openni2_paths.py "#!/usr/bin/env python\n")
+# Do I need library path if the user installs this library to a standard place
+# like /usr/local/lib?  ffi.dlopen might handle it okay there.
+#file(APPEND "library_path = 
+
 include_directories(SYSTEM ${OPENNI2_INCLUDE_DIR})
 target_link_libraries(openni2_c_wrapper ${OPENNI2_LIBRARY})
 target_link_libraries(openni2_c_wrapper_test openni2_c_wrapper ${OPENNI2_LIBRARY})
