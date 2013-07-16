@@ -246,7 +246,8 @@ bool oni_hasSensor(oni_Device * device, oni_SensorType sensorType) {
     return false;
 }
 
-oni_Status oni_invoke(oni_Device * device, int cmdId, const void * data, int dataSize) {
+oni_Status oni_invoke_Device(oni_Device * device, int cmdId, const void * data,
+                             int dataSize) {
     EXC_CHECK( return device->invoke(cmdId, data, dataSize); )
     return openni::STATUS_ERROR;
 }

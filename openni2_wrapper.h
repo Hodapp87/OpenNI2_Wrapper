@@ -128,9 +128,9 @@ const char * oni_getExtendedError();
 oni_Version oni_getVersion();
 oni_Status oni_initialize();
 // See the notes on oni_addDevice* functions.
-void oni_removeDeviceConnectedListener(oni_DeviceConnectedListener * listen);
-void oni_removeDeviceDisconnectedListener(oni_DeviceDisconnectedListener * listen);
-void oni_removeDeviceStateChangedListener(oni_DeviceStateChangedListener * listen);
+void oni_removeDeviceConnectedListener(oni_DeviceConnectedListener listen);
+void oni_removeDeviceDisconnectedListener(oni_DeviceDisconnectedListener listen);
+void oni_removeDeviceStateChangedListener(oni_DeviceStateChangedListener listen);
 void oni_shutdown();
 
 // ================================================
